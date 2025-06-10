@@ -1,20 +1,23 @@
 import json
-import os
-from typing import Dict, Any
+from pathlib import Path
 
-# Look for config.json in the parent directory (project root)
-_config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.json')
+# Load config from JSON file
+CONFIG_PATH = Path(__file__).parent.parent / "config.json"
+with open(CONFIG_PATH, 'r') as f:
+    config = json.load(f)
 
-with open(_config_path, 'r', encoding='utf-8') as f:
-    CONFIG: Dict[str, Any] = json.load(f)
+# Existing config values
+DATA_DIR = config["DATA_DIR"]
+ENCODING = config["ENCODING"]
+DEBUG = config["DEBUG"]
+PORT = config["PORT"]
 
-# Base config values
-DATA_DIR = CONFIG['DATA_DIR']
-ENCODING = CONFIG.get('ENCODING', 'utf-8')
-DEBUG = CONFIG.get('DEBUG', True)
-PORT = CONFIG.get('PORT', 5000)
+# File paths
+INTERNAL_CSV_PATH = Path(DATA_DIR) / config["FILES"]["INTERNAL_CSV"]
+EXTERNAL_CSV_PATH = Path(DATA_DIR) / config["FILES"]["EXTERNAL_CSV"]
+MATCHES_CSV_PATH = Path(DATA_DIR) / config["FILES"]["MATCHES_CSV"]
 
-# Build paths using DATA_DIR + filename from config
-INTERNAL_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), DATA_DIR, CONFIG['FILES']['INTERNAL_CSV'])
-EXTERNAL_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), DATA_DIR, CONFIG['FILES']['EXTERNAL_CSV'])
-MATCHES_CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), DATA_DIR, CONFIG['FILES']['MATCHES_CSV'])
+# Matching configuration
+FIELD_WEIGHTS = config["MATCHING"]["FIELD_WEIGHTS"]
+FIELD_TYPES = config["MATCHING"]["FIELD_TYPES"]
+MATCH_THRESHOLD = config["MATCHING"]["MATCH_THRESHOLD"]

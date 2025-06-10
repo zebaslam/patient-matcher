@@ -7,5 +7,26 @@
     "INTERNAL_CSV": "internal.csv",
     "EXTERNAL_CSV": "external.csv",
     "MATCHES_CSV": "matches.csv"
+  },
+  "MATCHING": {
+    "FIELD_WEIGHTS": {
+      "LastName": 0.35,
+      "FirstName": 0.25,
+      "DOB": 0.20,
+      "PhoneNumber": 0.10,
+      "Address": 0.05,
+      "City": 0.03,
+      "ZipCode": 0.02
+    },
+    "FIELD_TYPES": {
+      "DOB": "exact",
+      "LastName": "name",
+      "FirstName": "name",
+      "PhoneNumber": "general",
+      "Address": "general",
+      "City": "general",
+      "ZipCode": "exact"
+    },
+    "MATCH_THRESHOLD": 0.7
   }
 }

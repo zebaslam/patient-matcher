@@ -13,8 +13,8 @@
   <h1 class="mb-4">Suggested Matches</h1>
 
   {% for match in matches %}
-    {% set ext_id = match.external.Id %}
-    {% set int_id = match.internal.Id %}
+    {% set ext_id = match.external.ExternalPatientId %}
+    {% set int_id = match.internal.InternalPatientId %}
     {% set match_id = "match-card-" ~ ext_id ~ "-" ~ int_id %}
 
     <div class="card mb-4" id="{{ match_id }}">

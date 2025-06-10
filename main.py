@@ -24,17 +24,37 @@ def create_app() -> Flask:
     @app.route('/')
     def index():
         """Render the main page with patient matches."""
-        internal, external = load_data()  # No data_dir parameter needed
-        matches = match_patients(internal, external)
-        return render_template('index.html', matches=matches)
+        try:
+            print("Loading data...")
+            internal, external = load_data()
+            print(f"Loaded: Internal={len(internal)}, External={len(external)}")
+            
+            if not internal or not external:
+                print("Warning: No data loaded!")
+                return render_template('index.html', matches=[], error="No data found")
+            
+            print("Running matching algorithm...")
+            matches = match_patients(internal, external)
+            print(f"Found {len(matches)} matches")
+            
+            return render_template('index.html', matches=matches)
+            
+        except Exception as e:
+            print(f"Error in index route: {e}")
+            import traceback
+            traceback.print_exc()
+            return render_template('index.html', matches=[], error=str(e))
 
     @app.route('/accept', methods=['POST'])
     def accept_match():
         """Accept a match and record it in the matches CSV."""
         data = request.get_json(force=True)
-        ext_id = data.get('external_id')
-        int_id = data.get('internal_id')
-        success = write_match(ext_id, int_id)  # No data_dir parameter needed
+        
+        # Use the actual patient IDs from the data
+        ext_id = data.get('external_id')  # This should be the real ExternalPatientId
+        int_id = data.get('internal_id')  # This should be the real InternalPatientId
+        
+        success = write_match(ext_id, int_id)
         return jsonify(success=success), 200 if success else 400
 
     # Attach config values for use in __main__
