@@ -1,7 +1,11 @@
 {
   "DATA_DIR": "data",
-  "MATCHES_FILENAME": "matches.csv",
   "ENCODING": "utf-8",
   "DEBUG": true,
-  "PORT": 5000
+  "PORT": 5000,
+  "FILES": {
+    "INTERNAL_CSV": "data/internal.csv",
+    "EXTERNAL_CSV": "data/external.csv",
+    "MATCHES_CSV": "data/matches.csv"
+  }
 }
