@@ -1,5 +1,6 @@
 """Main patient matching API."""
 import csv
+import re
 from typing import List, Dict, Any
 from app.config import MATCHES_CSV_PATH, FIELD_WEIGHTS, FIELD_TYPES, MATCH_THRESHOLD, ENCODING
 from .similarity import similarity_ratio, token_overlap_score, jaro_winkler_similarity
@@ -21,6 +22,8 @@ def _calculate_field_similarity(first_field: str, second_field: str, field_type:
             return 0.0
         elif field_type == "name":
             result = jaro_winkler_similarity(norm1, norm2)
+        elif field_name == "PhoneNumber":  # Special handling for phones
+            result = _phone_similarity(first_field, second_field)
         else:  # "general"
             if ' ' in norm1 or ' ' in norm2:
                 token_score = token_overlap_score(norm1, norm2)
@@ -89,3 +92,26 @@ def write_match(external_id: str, internal_id: str) -> bool:
     except Exception as e:
         print(f"Error writing match: {e}")
         return False
+
+def _phone_similarity(phone1: str, phone2: str) -> float:
+    """Calculate similarity between phone numbers, handling partial matches."""
+    # Normalize both phones
+    norm1 = re.sub(r'\D', '', phone1)  # digits only
+    norm2 = re.sub(r'\D', '', phone2)  # digits only
+    
+    if not norm1 or not norm2:
+        return 0.0
+    
+    # Exact match
+    if norm1 == norm2:
+        return 1.0
+    
+    # Check if one is a suffix of the other (area code missing)
+    if len(norm1) >= 7 and len(norm2) >= 7:
+        last7_1 = norm1[-7:]
+        last7_2 = norm2[-7:]
+        if last7_1 == last7_2:
+            return 0.9  # High similarity for matching local numbers
+    
+    # Fallback to general string similarity
+    return similarity_ratio(norm1, norm2)

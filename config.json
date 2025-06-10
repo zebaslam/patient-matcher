@@ -10,16 +10,18 @@
   },
   "MATCHING": {
     "FIELD_WEIGHTS": {
-      "LastName": 0.35,
-      "FirstName": 0.25,
-      "DOB": 0.20,
-      "PhoneNumber": 0.10,
-      "Address": 0.05,
+      "DOB": 0.3,
+      "LastName": 0.25,
+      "FirstName": 0.2,
+      "PhoneNumber": 0.1,
+      "Sex": 0.05,
+      "Address": 0.04,
       "City": 0.03,
-      "ZipCode": 0.02
+      "ZipCode": 0.03
     },
     "FIELD_TYPES": {
       "DOB": "exact",
+      "Sex": "exact",
       "LastName": "name",
       "FirstName": "name",
       "PhoneNumber": "general",

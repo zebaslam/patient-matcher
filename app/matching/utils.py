@@ -7,6 +7,8 @@ def normalize_string(s: str, fieldName: str) -> str:
     """Normalize string for comparison: lowercase, remove punctuation/whitespace."""
     if fieldName == "DOB":
         return _normalize_date(s)
+    elif fieldName == "PhoneNumber":
+        return _normalize_phone(s)
     else:
         normalized = re.sub(r'[^\w\s]', '', str(s).lower())
         normalized = re.sub(r'\s+', ' ', normalized).strip()
@@ -46,3 +48,9 @@ def _normalize_date(date_str: str) -> str:
     else:
         # Not DD-MMM-YYYY format, return as-is
         return date_str
+
+def _normalize_phone(phone_str: str) -> str:
+    """Normalize phone number to digits only."""
+    if not phone_str:
+        return ""
+    return re.sub(r'\D', '', phone_str)
