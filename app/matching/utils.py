@@ -9,6 +9,8 @@ def normalize_string(s: str, fieldName: str) -> str:
         return _normalize_date(s)
     elif fieldName == "PhoneNumber":
         return _normalize_phone(s)
+    elif fieldName == "Address":
+        return _normalize_address(s)
     else:
         normalized = re.sub(r'[^\w\s]', '', str(s).lower())
         normalized = re.sub(r'\s+', ' ', normalized).strip()
@@ -30,9 +32,26 @@ def get_patient_id(patient: Dict[str, Any]) -> str:
         # Fallback to generated ID if no real ID exists
         return patient.get('Id', 'UNKNOWN')
     
+def extract_base_address(addr: str) -> str:
+    """Extract base address without suite/apartment number."""
+    if not addr:
+        return ""
+    
+    # Remove suite/apartment patterns
+    # Patterns like: "apt 123", "suite 45", "ste a", "#205"
+    base = re.sub(r'\b(apt|ste|suite|apartment|unit|#)\s*\w+\b', '', addr, flags=re.IGNORECASE)
+    
+    # Clean up extra spaces
+    base = re.sub(r'\s+', ' ', base).strip()
+    
+    return base
+    
 def _normalize_date(date_str: str) -> str:
     """Normalize date from DD-MMM-YYYY to YYYY-MM-DD format, leave others unchanged."""
-
+    if not date_str:
+        return ""
+        
+    
     date_str = date_str.strip()
     
     # Check if it matches DD-MMM-YYYY pattern (e.g., "02-Dec-1978")
@@ -54,3 +73,37 @@ def _normalize_phone(phone_str: str) -> str:
     if not phone_str:
         return ""
     return re.sub(r'\D', '', phone_str)
+
+def _normalize_address(addr_str: str) -> str:
+    """Normalize address for comparison."""
+    if not addr_str:
+        return ""
+    
+    # Convert to lowercase and clean up
+    normalized = addr_str.lower().strip()
+    
+    # Standardize common abbreviations
+    replacements = {
+        r'\bstreet\b': 'st',
+        r'\bstret\b': 'st',  # common typo
+        r'\bavenue\b': 'ave',
+        r'\bboulevard\b': 'blvd',
+        r'\bdrive\b': 'dr',
+        r'\bplace\b': 'pl',
+        r'\bcourt\b': 'ct',
+        r'\bapartment\b': 'apt',
+        r'\bsuite\b': 'ste',
+        r'\bnorth\b': 'n',
+        r'\bsouth\b': 's',
+        r'\beast\b': 'e',
+        r'\bwest\b': 'w',
+    }
+    
+    for pattern, replacement in replacements.items():
+        normalized = re.sub(pattern, replacement, normalized)
+    
+    # Remove extra spaces and punctuation
+    normalized = re.sub(r'[^\w\s]', ' ', normalized)
+    normalized = re.sub(r'\s+', ' ', normalized).strip()
+    
+    return normalized

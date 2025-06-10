@@ -4,8 +4,7 @@ import re
 from typing import List, Dict, Any
 from app.config import MATCHES_CSV_PATH, FIELD_WEIGHTS, FIELD_TYPES, MATCH_THRESHOLD, ENCODING
 from .similarity import similarity_ratio, token_overlap_score, jaro_winkler_similarity
-from .utils import normalize_string, get_patient_id
-from .data_loader import load_data
+from .utils import normalize_string, extract_base_address
 
 def _calculate_field_similarity(first_field: str, second_field: str, field_type: str, field_name: str) -> float:
     """Calculate similarity between two field values based on field type."""
@@ -23,7 +22,9 @@ def _calculate_field_similarity(first_field: str, second_field: str, field_type:
         elif field_type == "name":
             result = jaro_winkler_similarity(norm1, norm2)
         elif field_name == "PhoneNumber":  # Special handling for phones
-            result = _phone_similarity(first_field, second_field)
+            result = _phone_similarity(norm1, norm2)
+        elif field_name == "Address":  # Special handling for addresses
+            result = _address_similarity(norm1, norm2)
         else:  # "general"
             if ' ' in norm1 or ' ' in norm2:
                 token_score = token_overlap_score(norm1, norm2)
@@ -115,3 +116,25 @@ def _phone_similarity(phone1: str, phone2: str) -> float:
     
     # Fallback to general string similarity
     return similarity_ratio(norm1, norm2)
+
+def _address_similarity(addr1: str, addr2: str) -> float:
+    """Calculate similarity between addresses, handling suite/apt variations."""
+    if not addr1 or not addr2:
+        return 0.0
+    
+    if addr1 == addr2:
+        return 1.0
+    
+    # Extract base address (without suite/apt)
+    base1 = extract_base_address(addr1)
+    base2 = extract_base_address(addr2)
+    
+    # If base addresses match exactly, high similarity
+    if base1 == base2 and base1:
+        return 0.95
+    
+    # Use token overlap for partial matches
+    token_score = token_overlap_score(addr1, addr2)
+    similarity_score = similarity_ratio(addr1, addr2)
+    
+    return max(token_score, similarity_score * 0.8)
