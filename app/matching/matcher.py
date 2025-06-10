@@ -28,11 +28,14 @@ def calculate_weighted_similarity(patient1: Dict[str, Any], patient2: Dict[str, 
     breakdown = {}
 
     for field_name, weight in FIELD_WEIGHTS.items():
-        if field_name in patient1 and field_name in patient2:
+        val1 = patient1.get(field_name)
+        val2 = patient2.get(field_name)
+        if val1 is not None and val2 is not None:
             field_type = FIELD_TYPES.get(field_name, "general")
-            similarity = calculate_field_similarity(
-                patient1[field_name], patient2[field_name], field_type, field_name
-            )
+            if val1 and val2:
+                similarity = calculate_field_similarity(val1, val2, field_type, field_name)
+            else:
+                similarity = 0.5  # Neutral score for missing value
             weighted_score = similarity * weight
             breakdown[field_name] = {
                 "similarity": similarity,
