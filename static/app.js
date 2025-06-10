@@ -38,3 +38,32 @@ document.addEventListener('DOMContentLoaded', function () {
     new bootstrap.Tooltip(tooltipTriggerEl);
   });
 });
+
+function copyPatientJson(patientObj, label) {
+  const jsonStr = JSON.stringify(patientObj, null, 2);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(jsonStr).then(() => {
+      alert(`${label} JSON copied to clipboard!`);
+    }, () => {
+      alert('Failed to copy JSON.');
+    });
+  } else {
+    // Fallback for older browsers
+    const textarea = document.createElement('textarea');
+    textarea.value = jsonStr;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+      document.execCommand('copy');
+      alert(`${label} JSON copied to clipboard!`);
+    } catch (err) {
+      alert('Failed to copy JSON.');
+    }
+    document.body.removeChild(textarea);
+  }
+}
+
+function copyPatientJsonFromButton(btn, label) {
+  const patientObj = JSON.parse(btn.getAttribute('data-patient'));
+  copyPatientJson(patientObj, label);
+}

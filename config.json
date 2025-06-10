@@ -29,7 +29,7 @@
       "City": "general",
       "ZipCode": "exact"
     },
-    "MATCH_THRESHOLD": 0.7,
+    "MATCH_THRESHOLD": 0.60,
     "SIMILARITY_THRESHOLDS": {
       "FIRST_NAME_MIDDLE_NAME": 0.95,
       "FIRST_NAME_MATCH": 0.9,
