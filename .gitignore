@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtualenv
+venv/
+.env/
+.venv/
+
+# VS Code
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# Data outputs
+data/matches.csv
