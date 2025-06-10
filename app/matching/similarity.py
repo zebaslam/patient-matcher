@@ -1,94 +1,292 @@
-"""String similarity algorithms for patient matching."""
+"""String similarity algorithms for patient matching.
 
-def levenshtein_distance(s1, s2):
-    """Basic Levenshtein distance calculation."""
-    if len(s1) < len(s2):
-        return levenshtein_distance(s2, s1)
-    previous_row = list(range(len(s2) + 1))
-    for i, c1 in enumerate(s1):
-        current_row = [i + 1]
-        for j, c2 in enumerate(s2):
-            insertions = previous_row[j + 1] + 1
-            deletions = current_row[j] + 1
-            substitutions = previous_row[j] + (c1 != c2)
-            current_row.append(min(insertions, deletions, substitutions))
-        previous_row = current_row
-    return previous_row[-1]
+This module provides various string similarity metrics commonly used in
+record linkage and patient matching applications.
+"""
 
-def similarity_ratio(s1, s2):
-    """Similarity ratio based on edit distance."""
-    max_len = max(len(s1), len(s2))
-    return 1.0 if max_len == 0 else 1.0 - levenshtein_distance(s1, s2) / max_len
+from typing import Set, Tuple
 
-def token_overlap_score(s1, s2):
-    """Token-based overlap score."""
-    tokens1 = set(s1.split())
-    tokens2 = set(s2.split())
-    return len(tokens1 & tokens2) / len(tokens1 | tokens2) if tokens1 and tokens2 else 0.0
+
+class SimilarityMetrics:
+    """Collection of string similarity algorithms for patient matching."""
+    
+    @staticmethod
+    def _validate_strings(s1: str, s2: str) -> Tuple[str, str]:
+        """Validate and normalize input strings."""
+        if not isinstance(s1, str) or not isinstance(s2, str):
+            raise TypeError("Both inputs must be strings")
+        return s1.strip(), s2.strip()
+    
+    @staticmethod
+    def _tokenize(text: str) -> Set[str]:
+        """Split text into normalized tokens."""
+        return set(text.lower().split())
+    
+    @classmethod
+    def levenshtein_distance(cls, s1: str, s2: str) -> int:
+        """Calculate minimum edit distance between two strings.
+        
+        Uses dynamic programming to find the minimum number of single-character
+        edits (insertions, deletions, substitutions) required to transform s1 into s2.
+        
+        Args:
+            s1: First string
+            s2: Second string
+            
+        Returns:
+            Non-negative integer representing edit distance
+        """
+        s1, s2 = cls._validate_strings(s1, s2)
+        
+        if not s1:
+            return len(s2)
+        if not s2:
+            return len(s1)
+        
+        # Ensure s1 is the shorter string for memory efficiency
+        if len(s1) > len(s2):
+            s1, s2 = s2, s1
+        
+        # Use single row optimization
+        previous_row = list(range(len(s2) + 1))
+        
+        for i, char1 in enumerate(s1):
+            current_row = [i + 1]
+            
+            for j, char2 in enumerate(s2):
+                insertion_cost = previous_row[j + 1] + 1
+                deletion_cost = current_row[j] + 1
+                substitution_cost = previous_row[j] + (char1 != char2)
+                
+                current_row.append(min(insertion_cost, deletion_cost, substitution_cost))
+            
+            previous_row = current_row
+        
+        return previous_row[-1]
+    
+    @classmethod
+    def normalized_similarity(cls, s1: str, s2: str) -> float:
+        """Calculate normalized similarity ratio based on edit distance.
+        
+        Returns a value between 0.0 (completely different) and 1.0 (identical).
+        
+        Args:
+            s1: First string
+            s2: Second string
+            
+        Returns:
+            Float between 0.0 and 1.0 representing similarity ratio
+        """
+        s1, s2 = cls._validate_strings(s1, s2)
+        
+        max_length = max(len(s1), len(s2))
+        if max_length == 0:
+            return 1.0
+        
+        edit_distance = cls.levenshtein_distance(s1, s2)
+        return 1.0 - (edit_distance / max_length)
+    
+    @classmethod
+    def jaccard_similarity(cls, s1: str, s2: str) -> float:
+        """Calculate Jaccard similarity coefficient for token sets.
+        
+        Measures overlap between two sets of tokens as |intersection| / |union|.
+        
+        Args:
+            s1: First string
+            s2: Second string
+            
+        Returns:
+            Float between 0.0 and 1.0 representing token overlap
+        """
+        s1, s2 = cls._validate_strings(s1, s2)
+        
+        tokens1 = cls._tokenize(s1)
+        tokens2 = cls._tokenize(s2)
+        
+        if not tokens1 and not tokens2:
+            return 1.0
+        if not tokens1 or not tokens2:
+            return 0.0
+        
+        intersection = tokens1 & tokens2
+        union = tokens1 | tokens2
+        
+        return len(intersection) / len(union)
+    
+    @classmethod
+    def _find_jaro_matches(cls, s1: str, s2: str) -> Tuple[int, int]:
+        """Find character matches and transpositions for Jaro calculation.
+        
+        Returns:
+            Tuple of (matches_count, transpositions_count)
+        """
+        len1, len2 = len(s1), len(s2)
+        match_window = max(len1, len2) // 2 - 1
+        match_window = max(0, match_window)
+        matches, transpositions = 0, 0
+        
+        s1_matches, s2_matches, matches = cls._find_character_matches(s1, s2, match_window)
+        
+        if matches != 0:
+         transpositions = cls._count_transpositions(s1, s2, s1_matches, s2_matches)
+        return matches, transpositions
+    
+    @classmethod
+    def _find_character_matches(cls, s1: str, s2: str, match_window: int) -> Tuple[list, list, int]:
+        """Find matching characters within the match window.
+        
+        Args:
+            s1: First string
+            s2: Second string
+            match_window: Maximum distance for character matches
+            
+        Returns:
+            Tuple of (s1_matches, s2_matches, total_matches)
+        """
+        len1, len2 = len(s1), len(s2)
+        s1_matches = [False] * len1
+        s2_matches = [False] * len2
+        matches = 0
+        
+        for i in range(len1):
+            window_start = max(0, i - match_window)
+            window_end = min(i + match_window + 1, len2)
+            
+            for j in range(window_start, window_end):
+                if s2_matches[j] or s1[i] != s2[j]:
+                    continue
+                
+                s1_matches[i] = s2_matches[j] = True
+                matches += 1
+                break
+        
+        return s1_matches, s2_matches, matches
+    
+    @classmethod
+    def _count_transpositions(cls, s1: str, s2: str, s1_matches: list, s2_matches: list) -> int:
+        """Count character transpositions between matched characters.
+        
+        Args:
+            s1: First string
+            s2: Second string
+            s1_matches: Boolean array indicating matches in s1
+            s2_matches: Boolean array indicating matches in s2
+            
+        Returns:
+            Number of transpositions
+        """
+        transpositions = 0
+        k = 0
+        
+        for i in range(len(s1)):
+            if not s1_matches[i]:
+                continue
+            
+            while not s2_matches[k]:
+                k += 1
+            
+            if s1[i] != s2[k]:
+                transpositions += 1
+            k += 1
+        
+        return transpositions
+    
+    @classmethod
+    def jaro_similarity(cls, s1: str, s2: str) -> float:
+        """Calculate Jaro similarity between two strings.
+        
+        The Jaro similarity is based on the number of matching characters
+        and transpositions, particularly effective for short strings.
+        
+        Args:
+            s1: First string
+            s2: Second string
+            
+        Returns:
+            Float between 0.0 and 1.0 representing Jaro similarity
+        """
+        s1, s2 = cls._validate_strings(s1, s2)
+        
+        if not s1 and not s2:
+            return 1.0
+        if not s1 or not s2:
+            return 0.0
+        if s1 == s2:
+            return 1.0
+        
+        matches, transpositions = cls._find_jaro_matches(s1, s2)
+        
+        if matches == 0:
+            return 0.0
+        
+        jaro = (
+            matches / len(s1) + 
+            matches / len(s2) + 
+            (matches - transpositions / 2) / matches
+        ) / 3
+        
+        return jaro
+    
+    @classmethod
+    def jaro_winkler_similarity(cls, s1: str, s2: str, prefix_weight: float = 0.1) -> float:
+        """Calculate Jaro-Winkler similarity with common prefix bonus.
+        
+        Enhances Jaro similarity by giving additional weight to strings
+        that match from the beginning (common prefix).
+        
+        Args:
+            s1: First string
+            s2: Second string
+            prefix_weight: Weight given to common prefix (default 0.1)
+            
+        Returns:
+            Float between 0.0 and 1.0 representing Jaro-Winkler similarity
+        """
+        if not 0 <= prefix_weight <= 0.25:
+            raise ValueError("prefix_weight must be between 0 and 0.25")
+        
+        s1, s2 = cls._validate_strings(s1, s2)
+        jaro_score = cls.jaro_similarity(s1, s2)
+        
+        # Only apply prefix bonus if Jaro similarity is above threshold
+        if jaro_score < 0.7:
+            return jaro_score
+        
+        # Calculate common prefix length (maximum 4 characters)
+        max_prefix_length = min(len(s1), len(s2), 4)
+        common_prefix_length = 0
+        
+        for i in range(max_prefix_length):
+            if s1[i] == s2[i]:
+                common_prefix_length += 1
+            else:
+                break
+        
+        return jaro_score + (common_prefix_length * prefix_weight * (1 - jaro_score))
+
+
+# Convenience functions for backward compatibility and ease of use
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """Calculate Levenshtein distance between two strings."""
+    return SimilarityMetrics.levenshtein_distance(s1, s2)
+
+
+def similarity_ratio(s1: str, s2: str) -> float:
+    """Calculate normalized similarity ratio between two strings."""
+    return SimilarityMetrics.normalized_similarity(s1, s2)
+
+
+def token_overlap_score(s1: str, s2: str) -> float:
+    """Calculate Jaccard similarity for token overlap."""
+    return SimilarityMetrics.jaccard_similarity(s1, s2)
+
 
 def jaro_similarity(s1: str, s2: str) -> float:
     """Calculate Jaro similarity between two strings."""
-    if not s1 or not s2:
-        return 0.0
-    
-    if s1 == s2:
-        return 1.0
-    
-    len1, len2 = len(s1), len(s2)
-    
-    # Calculate the match window
-    match_window = max(len1, len2) // 2 - 1
-    if match_window < 0:
-        match_window = 0
-    
-    # Track matches and transpositions
-    s1_matches = [False] * len1
-    s2_matches = [False] * len2
-    matches = 0
-    transpositions = 0
-    
-    # Find matches
-    for i in range(len1):
-        start = max(0, i - match_window)
-        end = min(i + match_window + 1, len2)
-        
-        for j in range(start, end):
-            if s2_matches[j] or s1[i] != s2[j]:
-                continue
-            s1_matches[i] = s2_matches[j] = True
-            matches += 1
-            break
-    
-    if matches == 0:
-        return 0.0
-    
-    # Count transpositions
-    k = 0
-    for i in range(len1):
-        if not s1_matches[i]:
-            continue
-        while not s2_matches[k]:
-            k += 1
-        if s1[i] != s2[k]:
-            transpositions += 1
-        k += 1
-    
-    jaro = (matches / len1 + matches / len2 + (matches - transpositions / 2) / matches) / 3
-    return jaro
+    return SimilarityMetrics.jaro_similarity(s1, s2)
+
 
 def jaro_winkler_similarity(s1: str, s2: str, prefix_scale: float = 0.1) -> float:
-    """Calculate Jaro-Winkler similarity with prefix bonus."""
-    jaro = jaro_similarity(s1, s2)
-    
-    if jaro < 0.7:
-        return jaro
-    
-    # Calculate common prefix length (up to 4 characters)
-    prefix_len = 0
-    for i in range(min(len(s1), len(s2), 4)):
-        if s1[i] == s2[i]:
-            prefix_len += 1
-        else:
-            break
-    
-    return jaro + (prefix_len * prefix_scale * (1 - jaro))
+    """Calculate Jaro-Winkler similarity between two strings."""
+    return SimilarityMetrics.jaro_winkler_similarity(s1, s2, prefix_scale)

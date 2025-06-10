@@ -37,6 +37,9 @@ def extract_base_address(addr: str) -> str:
     if not addr:
         return ""
     
+    # Remove leading zeros from house numbers first
+    addr = re.sub(r'^0+(\d)', r'\1', addr)
+    
     # Remove suite/apartment patterns
     # Patterns like: "apt 123", "suite 45", "ste a", "#205"
     base = re.sub(r'\b(apt|ste|suite|apartment|unit|#)\s*\w+\b', '', addr, flags=re.IGNORECASE)
