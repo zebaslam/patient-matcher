@@ -38,6 +38,9 @@ def create_app() -> Flask:
             matches = match_patients(internal, external)
             print(f"Found {len(matches)} matches")
             
+            # Sort matches by score (increasing order)
+            matches = sorted(matches, key=lambda m: m['score'])
+
             return render_template('index.html', matches=matches)
             
         except Exception as e:
