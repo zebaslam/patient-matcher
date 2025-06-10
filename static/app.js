@@ -1,6 +1,6 @@
 function acceptMatch(externalId, internalId) {
   const payload = { external_id: externalId, internal_id: internalId };
-  
+
   fetch('/accept', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -22,7 +22,7 @@ function removeMatchCard(externalId, internalId) {
   // Use the exact card ID format from your template
   const cardId = `match-card-${externalId}-${internalId}`;
   const card = document.getElementById(cardId);
-  
+
   if (card) {
     card.classList.add('fade-out');
     setTimeout(() => card.remove(), 500);
@@ -30,3 +30,11 @@ function removeMatchCard(externalId, internalId) {
     console.warn("Could not find card to remove:", cardId);
   }
 }
+
+// Initialize all Bootstrap tooltips on page load
+document.addEventListener('DOMContentLoaded', function () {
+  var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+    new bootstrap.Tooltip(tooltipTriggerEl);
+  });
+});
