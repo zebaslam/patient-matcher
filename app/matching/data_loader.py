@@ -1,7 +1,7 @@
 """Data loading functions for patient matching."""
 import csv
 from pathlib import Path
-from typing import Union, List, Dict, Any, Tuple
+from typing import Optional, Union, List, Dict, Any, Tuple
 from app.config import ENCODING, INTERNAL_CSV_PATH, EXTERNAL_CSV_PATH
 
 def load_csv(file_path: Union[str, Path]) -> List[Dict[str, Any]]:
@@ -18,7 +18,7 @@ def load_csv(file_path: Union[str, Path]) -> List[Dict[str, Any]]:
         print(f"Error loading CSV {file_path}: {e}")
         return []
 
-def load_data(data_dir: Union[str, Path] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def load_data(data_dir: Optional[Union[str, Path]] = None) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Load internal and external patient data from CSV files."""
     internal = load_csv(INTERNAL_CSV_PATH)
     external = load_csv(EXTERNAL_CSV_PATH)
