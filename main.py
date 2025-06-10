@@ -1,8 +1,9 @@
 import os
 import csv
 from flask import Flask, render_template, request, jsonify
-from matching.matcher import load_data, match_patients, write_match
-from config import CONFIG, ENCODING, DEBUG, PORT, MATCHES_CSV_PATH
+from app.matching.matcher import load_data, match_patients, write_match
+from app.config import ENCODING, DEBUG, PORT, MATCHES_CSV_PATH
+from app.filters import register_filters
 
 def initialize_matches_csv() -> None:
     """Create or truncate the matches CSV file and write the header."""
@@ -17,6 +18,7 @@ def initialize_matches_csv() -> None:
 def create_app() -> Flask:
     app = Flask(__name__)
     
+    register_filters(app)
     initialize_matches_csv()
 
     @app.route('/')

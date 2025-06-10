@@ -1,8 +1,7 @@
 import csv
-import os
 from pathlib import Path
 from typing import Union, List, Dict, Any, Tuple
-from config import ENCODING, INTERNAL_CSV_PATH, EXTERNAL_CSV_PATH, MATCHES_CSV_PATH
+from app.config import ENCODING, INTERNAL_CSV_PATH, EXTERNAL_CSV_PATH, MATCHES_CSV_PATH
 
 def load_csv(file_path: Union[str, Path]) -> List[Dict[str, Any]]:
     """Load CSV file and return list of dictionaries."""
