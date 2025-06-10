@@ -6,11 +6,11 @@ from .similarity import similarity_ratio, token_overlap_score, jaro_winkler_simi
 from .utils import normalize_string, get_patient_id
 from .data_loader import load_data
 
-def _calculate_field_similarity(first_field: str, second_field: str, field_type: str) -> float:
+def _calculate_field_similarity(first_field: str, second_field: str, field_type: str, field_name: str) -> float:
     """Calculate similarity between two field values based on field type."""
     try:
-        norm1 = normalize_string(first_field)
-        norm2 = normalize_string(second_field)
+        norm1 = normalize_string(first_field, field_name)
+        norm2 = normalize_string(second_field, field_name)
         
         if not norm1 or not norm2:
             return 0.0
@@ -50,7 +50,7 @@ def _calculate_weighted_similarity(patient1: Dict[str, Any], patient2: Dict[str,
             field_type = FIELD_TYPES.get(field_name, "general")
             
             similarity = _calculate_field_similarity(
-                patient1[field_name], patient2[field_name], field_type
+                patient1[field_name], patient2[field_name], field_type, field_name
             )
             
             # Debug check
