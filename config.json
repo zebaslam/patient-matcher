@@ -1,0 +1,6 @@
+{
+  "DATA_DIR": "data",
+  "MATCHES_FILENAME": "matches.csv",
+  "ENCODING": "utf-8",
+  "PORT": 5000
+}
