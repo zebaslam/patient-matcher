@@ -19,15 +19,27 @@ function acceptMatch(externalId, internalId) {
 }
 
 function removeMatchCard(externalId, internalId) {
-  // Use the exact card ID format from your template
   const cardId = `match-card-${externalId}-${internalId}`;
   const card = document.getElementById(cardId);
 
   if (card) {
     card.classList.add('fade-out');
-    setTimeout(() => card.remove(), 500);
+    setTimeout(() => {
+      card.remove();
+      decrementMatchesCounter(); // Decrement after removing the card
+    }, 500);
   } else {
     console.warn("Could not find card to remove:", cardId);
+  }
+}
+
+function decrementMatchesCounter() {
+  const counter = document.getElementById('matches-counter');
+  if (counter) {
+    let count = parseInt(counter.textContent, 10);
+    if (count > 0) {
+      counter.textContent = count - 1;
+    }
   }
 }
 

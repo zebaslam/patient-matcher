@@ -10,7 +10,10 @@
 <body class="bg-light">
 
 <div class="container py-5">
-  <h1 class="mb-4">Suggested Matches</h1>
+  <h1 class="mb-4">
+    Total Suggested Matches
+    <span id="matches-counter" class="badge bg-primary">{{ matches|length }}</span>
+  </h1>
 
   {% for match in matches %}
     {% set ext_id = match.external.ExternalPatientId %}
