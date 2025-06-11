@@ -14,16 +14,16 @@ def match_patients(internal: List[Dict[str, Any]], external: List[Dict[str, Any]
     matches = []
     start_time = time.time()
 
+    # Precompute normalized fields ONCE
+    for p in internal:
+        p["_norm_dob"] = get_normalized(p, "DOB")
+        p["_norm_gender"] = get_normalized(p, "Sex")
+
     for external_patient in external:
         ext_dob = get_normalized(external_patient, "DOB")
         ext_gender = get_normalized(external_patient, "Sex")
 
         for internal_patient in internal:
-            # Get or set normalized DOB and Gender for internal_patient
-            if "_norm_dob" not in internal_patient:
-                internal_patient["_norm_dob"] = get_normalized(internal_patient, "DOB")
-            if "_norm_gender" not in internal_patient:
-                internal_patient["_norm_gender"] = get_normalized(internal_patient, "Sex")
             int_dob = internal_patient["_norm_dob"]
             int_gender = internal_patient["_norm_gender"]
 
@@ -35,10 +35,9 @@ def match_patients(internal: List[Dict[str, Any]], external: List[Dict[str, Any]
                 external_patient, internal_patient
             )
             if similarity >= MATCH_THRESHOLD:
-                internal_clean = {k: v for k, v in internal_patient.items() if k not in ("_norm_dob", "_norm_gender")}
-                external_clean = {k: v for k, v in external_patient.items() if k not in ("_norm_dob", "_norm_gender")}
+                internal_clean = {k: v for k, v in internal_patient.items() if k not in {"_norm_dob", "_norm_gender"}}
                 matches.append({
-                    'external': external_clean,
+                    'external': external_patient,
                     'internal': internal_clean,
                     'score': similarity,
                     'breakdown': breakdown
