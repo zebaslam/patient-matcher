@@ -1,11 +1,14 @@
 import json
 from pathlib import Path
 from typing import Final, Dict, Any
+import os
 
 # Load config from JSON file
 CONFIG_PATH: Final[Path] = Path(__file__).parent.parent / "config.json"
 with open(CONFIG_PATH, 'r') as f:
     config: Dict[str, Any] = json.load(f)
+
+LOG_LEVEL: Final[str] = config.get("LOG_LEVEL", "WARNING")
 
 # Existing config values
 DATA_DIR: Final[str] = config["DATA_DIR"]

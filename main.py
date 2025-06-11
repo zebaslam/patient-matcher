@@ -1,13 +1,16 @@
 import os
 import csv
+import logging
 from flask import Flask, render_template, request, jsonify
 from app.matching.matcher import match_patients, write_match
 from app.matching.data_loader import load_data
-from app.config import ENCODING, DEBUG, PORT, MATCHES_CSV_PATH
+from app.config import ENCODING, DEBUG, PORT, MATCHES_CSV_PATH, LOG_LEVEL
 from app.filters import register_filters
 
+
 def create_app() -> Flask:
-    app = Flask(__name__)
+    app = Flask(__name__)    
+    logging.basicConfig(level=getattr(logging, LOG_LEVEL))
     register_filters(app)
 
     def _init_matches_csv():
