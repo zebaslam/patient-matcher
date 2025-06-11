@@ -3,18 +3,6 @@ import re
 from typing import List, Dict, Any
 from datetime import datetime
 
-def normalize_string(s: str, fieldName: str) -> str:
-    """Normalize string for comparison: lowercase, remove punctuation/whitespace."""
-    if fieldName == "DOB":
-        return _normalize_date(s)
-    elif fieldName == "PhoneNumber":
-        return _normalize_phone(s)
-    elif fieldName == "Address":
-        return _normalize_address(s)
-    else:
-        normalized = re.sub(r'[^\w\s]', '', str(s).lower())
-        normalized = re.sub(r'\s+', ' ', normalized).strip()
-        return normalized
 
 def add_unique_ids(patients: List[Dict[str, Any]], prefix: str) -> None:
     """Internal helper to add stable unique IDs to patient records."""
@@ -33,18 +21,18 @@ def get_patient_id(patient: Dict[str, Any]) -> str:
         return patient.get('Id', 'UNKNOWN')
     
 def extract_base_address(addr: str) -> str:
-    """Extract base address without suite/apartment number."""
+    """Extract base address without suite/apartment/unit number."""
     if not addr:
         return ""
     
     # Remove leading zeros from house numbers first
     addr = re.sub(r'^0+(\d)', r'\1', addr)
     
-    # Remove suite/apartment patterns
-    # Patterns like: "apt 123", "suite 45", "ste a", "#205"
-    base = re.sub(r'\b(apt|ste|suite|apartment|unit|#)\s*\w+\b', '', addr, flags=re.IGNORECASE)
+    # Handles: "Apt 123", "Apt. 123", "Suite 45", "Ste A", "#205", etc.
+    base = re.split(r'\b(?:apt|apartment|unit|suite|ste|#)[\.\s]*\w*\b', addr, flags=re.IGNORECASE)[0]
     
-    # Clean up extra spaces
+    # Clean up extra spaces and punctuation
+    base = re.sub(r'[^\w\s]', '', base)
     base = re.sub(r'\s+', ' ', base).strip()
     
     return base
@@ -110,3 +98,16 @@ def _normalize_address(addr_str: str) -> str:
     normalized = re.sub(r'\s+', ' ', normalized).strip()
     
     return normalized
+
+def normalize_string(s: str, fieldName: str) -> str:
+    """Normalize string for comparison: lowercase, remove punctuation/whitespace."""
+    if fieldName == "DOB":
+        return _normalize_date(s)
+    elif fieldName == "PhoneNumber":
+        return _normalize_phone(s)
+    elif fieldName == "Address":
+        return _normalize_address(s)
+    else:
+        normalized = re.sub(r'[^\w\s]', '', str(s).lower())
+        normalized = re.sub(r'\s+', ' ', normalized).strip()
+        return normalized

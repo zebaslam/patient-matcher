@@ -53,11 +53,33 @@ def calculate_weighted_similarity(patient1: Dict[str, Any], patient2: Dict[str, 
         final_score *= 0.6  # 40% penalty for gender mismatch
         gender_penalty_applied = True
 
+    # Apply additional penalties
+    penalty = _calculate_penalty(breakdown)
+    final_score = max(0.0, final_score - penalty)
+
     return final_score, {
         "fields": breakdown,
         "gender_penalty_applied": gender_penalty_applied,
         "final_score": final_score
     }
+
+def _calculate_penalty(breakdown: dict) -> float:
+    """Calculate penalty based on critical field similarities."""
+    penalty = 0.0
+
+    phone_sim = breakdown.get('PhoneNumber', {}).get('similarity', 1.0)
+    strong_fields = [
+        breakdown.get('FirstName', {}).get('similarity', 1.0),
+        breakdown.get('DOB', {}).get('similarity', 1.0),
+        breakdown.get('Address', {}).get('similarity', 1.0),
+    ]
+    strong_count = sum(1 for s in strong_fields if s > 0.9)
+
+    # Only penalize phone if not enough strong fields
+    if phone_sim < 0.5 and strong_count < 3:
+        penalty += 0.1
+
+    return penalty
 
 def write_match(external_id: str, internal_id: str) -> bool:
     """Write a match to the matches CSV file."""
