@@ -118,11 +118,6 @@
                 </tbody>
               </table>
             </div>
-            {% if match.breakdown.gender_penalty_applied %}
-              <div class="alert alert-warning py-1 mb-2">
-                <strong>Gender mismatch penalty applied.</strong>
-              </div>
-            {% endif %}
             <div>
               <strong>Final Score:</strong> {{ match.breakdown.final_score|round(3) }}
             </div>
