@@ -4,7 +4,7 @@ This module provides similarity calculations for different field types in patien
 including names, phone numbers, addresses, and general text fields.
 """
 
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Callable
 
 from app.config import (
     FIRST_NAME_MIDDLE_NAME,
@@ -13,7 +13,7 @@ from app.config import (
     GENERAL_SIMILARITY_MULTIPLIER,
 )
 from .string_similarity import similarity_ratio, token_overlap_score, jaro_winkler_similarity
-from .utils import _normalize_phone, normalize_string
+from .normalization import _normalize_phone, normalize_string
 
 
 class FieldSimilarityCalculator:
