@@ -6,39 +6,47 @@ from app.matching.normalization import normalize_string
 import time
 import logging
 
-def get_normalized(patient: Dict[str, Any], field: str) -> str:
+def __get_normalized(patient: Dict[str, Any], field: str) -> str:
     return normalize_string(patient.get(field, ""), field)
+
+def __normalize_patient_fields(patient: Dict[str, Any], fields: List[str]) -> None:
+    for field in fields:
+        patient[f"{field}Normalized"] = __get_normalized(patient, field)
+        
+def __normalized_fields_identical(
+    patient1: Dict[str, Any], patient2: Dict[str, Any],
+) -> bool:
+    """Compare normalized fields of two patients."""
+    for field in ["DOB", "Sex"]:
+        norm1 = patient1.get(f"{field}Normalized", "")
+        norm2 = patient2.get(f"{field}Normalized", "")
+        if norm1 and norm2 and norm1 != norm2:
+            return False
+    return True
 
 def match_patients(internal: List[Dict[str, Any]], external: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Match patients using weighted field similarity with early filtering."""
     matches = []
     start_time = time.time()
+    norm_fields = ["DOB", "Sex"]
 
-    # Precompute normalized fields ONCE using the Normalized suffix
+    # Precompute normalized fields ONCE
     for p in internal:
-        p["DOBNormalized"] = get_normalized(p, "DOB")
-        p["SexNormalized"] = get_normalized(p, "Sex")
+        __normalize_patient_fields(p, norm_fields)
 
     for external_patient in external:
-        external_patient["DOBNormalized"] = get_normalized(external_patient, "DOB")
-        external_patient["SexNormalized"] = get_normalized(external_patient, "Sex")
-
-        ext_dob = external_patient["DOBNormalized"]
-        ext_gender = external_patient["SexNormalized"]
+        __normalize_patient_fields(external_patient, norm_fields)
 
         for internal_patient in internal:
-            int_dob = internal_patient["DOBNormalized"]
-            int_gender = internal_patient["SexNormalized"]
 
             # Early filter: skip if DOB or Gender are present in both and not equal
-            if (ext_dob and int_dob and ext_dob != int_dob) or (ext_gender and int_gender and ext_gender != int_gender):
+            if not __normalized_fields_identical(external_patient, internal_patient):
                 continue
 
             similarity, breakdown = calculate_weighted_similarity(
                 external_patient, internal_patient
             )
             if similarity >= MATCH_THRESHOLD:
-                # Remove only the Normalized fields you don't want to show, if any
                 internal_clean = {k: v for k, v in internal_patient.items()}
                 matches.append({
                     'external': external_patient,
