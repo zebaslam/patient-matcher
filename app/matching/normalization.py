@@ -51,9 +51,7 @@ def normalize_date(date_str: str) -> str:
 
 def _normalize_phone(phone_str: str) -> str:
     """Normalize phone number to digits only."""
-    if not phone_str:
-        return ""
-    return re.sub(r"\D", "", phone_str)
+    return re.sub(r"\D", "", phone_str) if phone_str else ""
 
 
 def extract_base_address(addr: str) -> str:
@@ -117,11 +115,10 @@ def normalize_string(s: str, field_name: str) -> str:
     """
     if field_name == "DOB":
         return normalize_date(s)
-    elif field_name == "PhoneNumber":
+    if field_name == "PhoneNumber":
         return _normalize_phone(s)
-    elif field_name == "Address":
+    if field_name == "Address":
         return _normalize_address(s)
-    else:
-        # General string normalization
-        normalized = re.sub(r"[^\w\s]", "", str(s).lower())
-        return re.sub(r"\s+", " ", normalized).strip()
+    # General string normalization
+    normalized = re.sub(r"[^\w\s]", "", str(s).lower())
+    return re.sub(r"\s+", " ", normalized).strip()

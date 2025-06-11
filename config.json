@@ -39,6 +39,13 @@
       "PHONE_AREA_CODE_MATCH": 0.2,
       "GENERAL_SIMILARITY_MULTIPLIER": 0.7,
       "ADDRESS_SIMILARITY_MULTIPLIER": 0.8
+    },
+    "PENALTIES": {
+      "DOB": 0.1,
+      "LastName": 0.05,
+      "FirstName": 0.05,
+      "PhoneNumber": 0.1,
+      "Sex": 0.4
     }
   }
 }

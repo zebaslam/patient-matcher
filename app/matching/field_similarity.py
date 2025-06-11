@@ -4,7 +4,8 @@ This module provides similarity calculations for different field types in patien
 including names, phone numbers, addresses, and general text fields.
 """
 
-from typing import Dict, Any, Callable
+from typing import Dict, Callable
+import logging
 
 from app.config import (
     FIRST_NAME_MIDDLE_NAME,
@@ -71,7 +72,9 @@ class FieldSimilarityCalculator:
             return handler(norm1, norm2)
 
         except (ValueError, TypeError) as e:
-            print(f"Error calculating field similarity for {field_name}: {e}")
+            logging.error(
+                "Error calculating field similarity for %s: %s", field_name, e
+            )
             return 0.0
 
     def _name_similarity(self, norm1: str, norm2: str) -> float:
@@ -250,18 +253,3 @@ def address_similarity(addr1: str, addr2: str) -> float:
     """Calculate similarity for addresses."""
     # Use the public interface instead of accessing the protected member
     return _similarity_calculator.calculate(addr1, addr2, "exact", "Address")
-
-
-def has_gender_mismatch(patient1: Dict[str, Any], patient2: Dict[str, Any]) -> bool:
-    """Check if patients have conflicting gender information.
-
-    Args:
-        patient1: First patient record
-        patient2: Second patient record
-
-    Returns:
-        True if both patients have gender info and they differ
-    """
-    sex1 = patient1.get("Sex")
-    sex2 = patient2.get("Sex")
-    return sex1 is not None and sex2 is not None and sex1 != sex2
