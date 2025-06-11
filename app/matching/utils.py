@@ -70,6 +70,9 @@ def _normalize_address(addr_str: str) -> str:
     if not addr_str:
         return ""
     
+    # Use base address (strip apartment/unit/suite)
+    addr_str = extract_base_address(addr_str)
+    
     # Convert to lowercase and clean up
     normalized = addr_str.lower().strip()
     
