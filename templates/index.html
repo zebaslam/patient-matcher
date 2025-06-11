@@ -38,10 +38,32 @@
                   </button>
                 </div>
                 {% for key, value in match.external.items() %}
-                  <div class="row mb-1">
-                    <div class="col-4"><strong>{{ key | camel_to_title }}:</strong></div>
-                    <div class="col-8">{{ value }}</div>
-                  </div>
+                  {% if not key.endswith('Normalized') %}
+                    {% set norm_key = key ~ 'Normalized' %}
+                    {% set ext_norm = match.external.get(norm_key) %}
+                    {% set int_norm = match.internal.get(norm_key) %}
+                    <div class="row mb-1">
+                      <div class="d-flex w-100
+                        {% if ext_norm and int_norm and ext_norm != int_norm %}
+                          bg-warning-subtle border border-warning rounded px-2 py-1
+                        {% endif %}
+                      ">
+                        <div class="col-4"><strong>{{ key | camel_to_title }}:</strong></div>
+                        <div class="col-8">
+                          <span
+                            {% if ext_norm and int_norm and ext_norm != int_norm %}
+                              data-bs-toggle="tooltip" title="Normalized value differs!"
+                            {% endif %}
+                          >
+                            {{ value }}
+                            {% if ext_norm and int_norm and ext_norm != int_norm %}
+                              <span class="ms-1 text-warning">&#9888;</span>
+                            {% endif %}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
                 {% endfor %}
               </div>
             </div>
@@ -59,10 +81,32 @@
                   </button>
                 </div>
                 {% for key, value in match.internal.items() %}
-                  <div class="row mb-1">
-                    <div class="col-4"><strong>{{ key | camel_to_title }}:</strong></div>
-                    <div class="col-8">{{ value }}</div>
-                  </div>
+                  {% if not key.endswith('Normalized') %}
+                    {% set norm_key = key ~ 'Normalized' %}
+                    {% set ext_norm = match.external.get(norm_key) %}
+                    {% set int_norm = match.internal.get(norm_key) %}
+                    <div class="row mb-1">
+                      <div class="d-flex w-100
+                        {% if ext_norm and int_norm and ext_norm != int_norm %}
+                          bg-warning-subtle border border-warning rounded px-2 py-1
+                        {% endif %}
+                      ">
+                        <div class="col-4"><strong>{{ key | camel_to_title }}:</strong></div>
+                        <div class="col-8">
+                          <span
+                            {% if ext_norm and int_norm and ext_norm != int_norm %}
+                              data-bs-toggle="tooltip" title="Normalized value differs!"
+                            {% endif %}
+                          >
+                            {{ value }}
+                            {% if ext_norm and int_norm and ext_norm != int_norm %}
+                              <span class="ms-1 text-warning">&#9888;</span>
+                            {% endif %}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
                 {% endfor %}
               </div>
             </div>

@@ -16,13 +16,16 @@ def calculate_weighted_similarity(
     for field_name, weight in FIELD_WEIGHTS.items():
         # Use pre-normalized values for DOB and Gender if available
         if field_name == "DOB":
-            n1 = patient1.get("_norm_dob", "")
-            n2 = patient2.get("_norm_dob", "")
+            n1 = patient1.get("DOBNormalized", "")
+            n2 = patient2.get("DOBNormalized", "")
         else:
             raw1 = patient1.get(field_name)
             raw2 = patient2.get(field_name)
             n1 = normalize_string(str(raw1) if raw1 is not None else "", field_name)
             n2 = normalize_string(str(raw2) if raw2 is not None else "", field_name)
+            # Store normalized values for UI display
+            patient1[f"{field_name}Normalized"] = n1
+            patient2[f"{field_name}Normalized"] = n2
         if not n1 or not n2:
             continue
 
