@@ -19,6 +19,7 @@ PORT: Final[int] = config["PORT"]
 INTERNAL_CSV_PATH: Final[Path] = Path(DATA_DIR) / config["FILES"]["INTERNAL_CSV"]
 EXTERNAL_CSV_PATH: Final[Path] = Path(DATA_DIR) / config["FILES"]["EXTERNAL_CSV"]
 MATCHES_CSV_PATH: Final[Path] = Path(DATA_DIR) / config["FILES"]["MATCHES_CSV"]
+ACCEPTED_CSV_PATH: Final[Path] = Path(DATA_DIR) / config["FILES"]["ACCEPTED_CSV"]
 
 # Matching configuration
 FIELD_WEIGHTS: Final[Dict[str, float]] = config["MATCHING"]["FIELD_WEIGHTS"]

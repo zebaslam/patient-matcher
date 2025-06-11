@@ -7,7 +7,8 @@
   "FILES": {
     "INTERNAL_CSV": "internal.csv",
     "EXTERNAL_CSV": "external.csv",
-    "MATCHES_CSV": "matches.csv"
+    "MATCHES_CSV": "matches.csv",
+    "ACCEPTED_CSV": "accepted.csv"
   },
   "MATCHING": {
     "FIELD_WEIGHTS": {

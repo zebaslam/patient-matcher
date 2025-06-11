@@ -1,10 +1,8 @@
-import os
-import csv
 import logging
 from flask import Flask, render_template, request, jsonify
 from app.matching.matcher import match_patients
-from app.matching.data_processor import load_data, write_match
-from app.config import ENCODING, DEBUG, PORT, MATCHES_CSV_PATH, LOG_LEVEL
+from app.io.csv_io import load_data, write_match, create_output_files, write_all_matches
+from app.config import DEBUG, PORT, LOG_LEVEL
 from app.filters import register_filters
 
 
@@ -14,13 +12,7 @@ def create_app() -> Flask:
     logging.basicConfig(level=getattr(logging, LOG_LEVEL))
     register_filters(flask_app)
 
-    def _init_matches_csv():
-        """Initialize the matches CSV file with headers."""
-        os.makedirs(os.path.dirname(MATCHES_CSV_PATH), exist_ok=True)
-        with open(MATCHES_CSV_PATH, "w", newline="", encoding=ENCODING) as f:
-            csv.writer(f).writerow(["ExternalPatientId", "InternalPatientId"])
-
-    _init_matches_csv()
+    create_output_files()
 
     @flask_app.route("/")
     def index():
@@ -32,6 +24,7 @@ def create_app() -> Flask:
             matches = sorted(
                 match_patients(internal, external), key=lambda m: m["score"]
             )
+            write_all_matches(matches)
             return render_template("index.html", matches=matches)
         except (IOError, ValueError) as e:
             return render_template("index.html", matches=[], error=str(e))

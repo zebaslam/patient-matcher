@@ -16,3 +16,4 @@ venv/
 
 # Data outputs
 data/matches.csv
+data/accepted.csv
