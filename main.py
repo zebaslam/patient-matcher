@@ -2,8 +2,8 @@ import os
 import csv
 import logging
 from flask import Flask, render_template, request, jsonify
-from app.matching.matcher import match_patients, write_match
-from app.matching.data_loader import load_data
+from app.matching.matcher import match_patients
+from app.matching.data_processor import load_data, write_match
 from app.config import ENCODING, DEBUG, PORT, MATCHES_CSV_PATH, LOG_LEVEL
 from app.filters import register_filters
 

@@ -1,8 +1,8 @@
-"""Data loading functions for patient matching."""
+"""Data loading and writing functions for patient matching."""
 import csv
 from pathlib import Path
 from typing import Optional, Union, List, Dict, Any, Tuple
-from app.config import ENCODING, INTERNAL_CSV_PATH, EXTERNAL_CSV_PATH
+from app.config import ENCODING, INTERNAL_CSV_PATH, EXTERNAL_CSV_PATH, MATCHES_CSV_PATH
 
 def load_csv(file_path: Union[str, Path]) -> List[Dict[str, Any]]:
     """Load CSV file and return list of dictionaries."""
@@ -23,3 +23,14 @@ def load_data(data_dir: Optional[Union[str, Path]] = None) -> Tuple[List[Dict[st
     internal = load_csv(INTERNAL_CSV_PATH)
     external = load_csv(EXTERNAL_CSV_PATH)
     return internal, external
+
+def write_match(external_id: str, internal_id: str) -> bool:
+    """Write a match to the matches CSV file."""
+    try:
+        with open(MATCHES_CSV_PATH, 'a', newline='', encoding=ENCODING) as f:
+            writer = csv.writer(f)
+            writer.writerow([external_id, internal_id])
+        return True
+    except Exception as e:
+        print(f"Error writing match: {e}")
+        return False
