@@ -10,13 +10,13 @@
   },
   "MATCHING": {
     "FIELD_WEIGHTS": {
-      "DOB": 0.25,
+      "DOB": 0.3,
       "LastName": 0.1,
       "FirstName": 0.2,
       "PhoneNumber": 0.2,
       "Sex": 0.05,
       "Address": 0.15,
-      "City": 0.03,
+      "City": 0.005,
       "ZipCode": 0.02
     },
     "FIELD_TYPES": {
@@ -29,11 +29,11 @@
       "City": "general",
       "ZipCode": "exact"
     },
-    "MATCH_THRESHOLD": 0.60,
+    "MATCH_THRESHOLD": 0.65,
     "SIMILARITY_THRESHOLDS": {
       "FIRST_NAME_MIDDLE_NAME": 0.95,
       "FIRST_NAME_MATCH": 0.9,
-      "ADDRESS_BASE_MATCH": 0.95,
+      "ADDRESS_BASE_MATCH": 1.0,
       "PHONE_PARTIAL_MATCH": 0.9,
       "PHONE_AREA_CODE_MATCH": 0.2,
       "GENERAL_SIMILARITY_MULTIPLIER": 0.7,
