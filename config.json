@@ -3,7 +3,7 @@
   "ENCODING": "utf-8",
   "DEBUG": true,
   "PORT": 5000,
-  "LOG_LEVEL": "WARNING",
+  "LOG_LEVEL": "DEBUG",
   "FILES": {
     "INTERNAL_CSV": "internal.csv",
     "EXTERNAL_CSV": "external.csv",
