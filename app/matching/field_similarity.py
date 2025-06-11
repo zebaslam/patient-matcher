@@ -12,7 +12,7 @@ from app.config import (
     PHONE_PARTIAL_MATCH,
     GENERAL_SIMILARITY_MULTIPLIER,
 )
-from .similarity import similarity_ratio, token_overlap_score, jaro_winkler_similarity
+from .string_similarity import similarity_ratio, token_overlap_score, jaro_winkler_similarity
 from .utils import _normalize_phone, normalize_string
 
 
