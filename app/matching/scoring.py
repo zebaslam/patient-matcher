@@ -3,10 +3,9 @@
 from typing import Tuple
 from models.patient import Patient
 from app.config import FIELD_WEIGHTS, FIELD_TYPES, PENALTIES
-from app.matching.normalization import normalize_string
 from app.matching.constants import (
     CRITICAL_FIELDS,
-    PRECOMPUTED_NORMALIZATION_FIELDS,
+    NORMALIZED_FIELDS,
     DEFAULT_PENALTY,
     DEFAULT_SIMILARITY,
 )
@@ -16,16 +15,10 @@ from .field_similarity import calculate_field_similarity
 def _get_normalized_precompute_values(
     patient1: Patient, patient2: Patient, field_name: str
 ):
-    """Return normalized values for a field, using precomputed if available."""
-    precomputed_key = PRECOMPUTED_NORMALIZATION_FIELDS.get(field_name)
-    if precomputed_key:
-        n1 = getattr(patient1, precomputed_key, "")
-        n2 = getattr(patient2, precomputed_key, "")
-    else:
-        raw1 = getattr(patient1, field_name, "")
-        raw2 = getattr(patient2, field_name, "")
-        n1 = normalize_string(str(raw1) if raw1 is not None else "", field_name)
-        n2 = normalize_string(str(raw2) if raw2 is not None else "", field_name)
+    """Return normalized values for a field, using normalized attributes if available."""
+    norm_field = NORMALIZED_FIELDS.get(field_name, f"{field_name}_norm")
+    n1 = getattr(patient1, norm_field, "")
+    n2 = getattr(patient2, norm_field, "")
     return n1, n2
 
 
@@ -44,14 +37,11 @@ def calculate_weighted_similarity(
 ) -> Tuple[float, dict]:
     """
     Calculate the weighted similarity score between two patient records.
-
-    Args:
-        patient1 (Patient): The first patient record.
-        patient2 (Patient): The second patient record.
-
-    Returns:
-        Tuple[float, dict]: A tuple containing the final similarity score and a breakdown dictionary.
     """
+    # Ensure all normalized fields are present
+    patient1.normalize_fields()
+    patient2.normalize_fields()
+
     total_weighted_score = DEFAULT_SIMILARITY
     total_weight_used = DEFAULT_SIMILARITY
     breakdown = {}

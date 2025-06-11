@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from app.matching.normalization import normalize_string
-from app.matching.constants import PRECOMPUTED_NORMALIZATION_FIELDS
+from app.matching.constants import PRECOMPUTED_NORMALIZATION_FIELDS, NORMALIZED_FIELDS
 
 
 @dataclass
@@ -32,7 +32,14 @@ class Patient:
     zipcode: str
     score: float = 0.0
 
-    def normalize_fields(self):
+    def normalize_precomputed_fields(self):
         """Attach normalized fields as attributes to this Patient."""
         for field, norm_field in PRECOMPUTED_NORMALIZATION_FIELDS.items():
+            setattr(self, norm_field, normalize_string(getattr(self, field, ""), field))
+
+    def normalize_fields(self, fields=None):
+        """Normalize all fields of the patient."""
+        if fields is None:
+            fields = NORMALIZED_FIELDS
+        for field, norm_field in fields.items():
             setattr(self, norm_field, normalize_string(getattr(self, field, ""), field))

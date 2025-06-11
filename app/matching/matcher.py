@@ -23,10 +23,10 @@ def match_patients(internal: List[Patient], external: List[Patient]) -> List[dic
     matches = []
 
     for p in internal:
-        p.normalize_fields()
+        p.normalize_precomputed_fields()
 
     for external_patient in external:
-        external_patient.normalize_fields()
+        external_patient.normalize_precomputed_fields()
 
         for internal_patient in internal:
             if not _normalized_fields_identical(external_patient, internal_patient):
