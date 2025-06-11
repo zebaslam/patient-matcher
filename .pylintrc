@@ -1,0 +1,10 @@
+[MESSAGES CONTROL]
+disable=C0114
+
+[MASTER]
+# Specify a configuration for your project if needed.
+# For example, you can add init-hook or ignore patterns here.
+
+[FORMAT]
+# You can add line length or other formatting options if desired.
+max-line-length=200
