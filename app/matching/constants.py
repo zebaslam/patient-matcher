@@ -7,11 +7,11 @@ This module defines precomputed normalization field mappings used in the patient
 from typing import Dict
 
 PRECOMPUTED_NORMALIZATION_FIELDS: Dict[str, str] = {
-    "DOB": "DOBNormalized",
-    "Sex": "SexNormalized",
+    "dob": "DOBNormalized",
+    "sex": "SexNormalized",
 }
 
-CRITICAL_FIELDS = {"DOB", "FirstName", "Address"}
+CRITICAL_FIELDS = {"dob", "first_name", "address"}
 
 DEFAULT_SIMILARITY = 0.0
 DEFAULT_PENALTY = 0.0

@@ -6,6 +6,19 @@ from app.config import DEBUG, PORT, LOG_LEVEL
 from app.filters import register_filters
 
 
+PATIENT_FIELDS = [
+    "patient_id",
+    "first_name",
+    "last_name",
+    "dob",
+    "sex",
+    "phone_number",
+    "address",
+    "city",
+    "zipcode",
+]
+
+
 def create_app() -> Flask:
     """Create and configure the Flask application."""
     flask_app = Flask(__name__)
@@ -25,7 +38,9 @@ def create_app() -> Flask:
                 match_patients(internal, external), key=lambda m: m["score"]
             )
             write_all_matches(matches)
-            return render_template("index.html", matches=matches)
+            return render_template(
+                "index.html", matches=matches, patient_fields=PATIENT_FIELDS
+            )
         except (IOError, ValueError) as e:
             return render_template("index.html", matches=[], error=str(e))
 

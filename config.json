@@ -12,24 +12,24 @@
   },
   "MATCHING": {
     "FIELD_WEIGHTS": {
-      "DOB": 0.3,
-      "LastName": 0.1,
-      "FirstName": 0.2,
-      "PhoneNumber": 0.05,
-      "Sex": 0.05,
-      "Address": 0.15,
-      "City": 0.005,
-      "ZipCode": 0.02
+      "dob": 0.3,
+      "last_name": 0.1,
+      "first_name": 0.2,
+      "phone_number": 0.05,
+      "sex": 0.05,
+      "address": 0.15,
+      "city": 0.005,
+      "zipcode": 0.02
     },
     "FIELD_TYPES": {
-      "DOB": "exact",
-      "Sex": "exact",
-      "LastName": "name",
-      "FirstName": "name",
-      "PhoneNumber": "exact",
-      "Address": "general",
-      "City": "general",
-      "ZipCode": "exact"
+      "dob": "exact",
+      "sex": "exact",
+      "last_name": "name",
+      "first_name": "name",
+      "phone_number": "exact",
+      "address": "general",
+      "city": "general",
+      "zipcode": "exact"
     },
     "MATCH_THRESHOLD": 0.70,
     "SIMILARITY_THRESHOLDS": {
@@ -42,11 +42,11 @@
       "ADDRESS_SIMILARITY_MULTIPLIER": 0.8
     },
     "PENALTIES": {
-      "DOB": 0.1,
-      "LastName": 0.05,
-      "FirstName": 0.05,
-      "PhoneNumber": 0.1,
-      "Sex": 0.4
+      "dob": 0.1,
+      "last_name": 0.05,
+      "first_name": 0.05,
+      "phone_number": 0.1,
+      "sex": 0.4
     }
   }
 }

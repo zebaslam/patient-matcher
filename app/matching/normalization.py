@@ -113,11 +113,11 @@ def normalize_string(s: str, field_name: str) -> str:
     Returns:
         The normalized string.
     """
-    if field_name == "DOB":
+    if field_name == "DOB".casefold():
         return normalize_date(s)
-    if field_name == "PhoneNumber":
+    if field_name == "phone_number":
         return _normalize_phone(s)
-    if field_name == "Address":
+    if field_name == "address".casefold():
         return _normalize_address(s)
     # General string normalization
     normalized = re.sub(r"[^\w\s]", "", str(s).lower())

@@ -1,6 +1,7 @@
 """Patient similarity scoring logic."""
 
-from typing import Dict, Any, Tuple
+from typing import Tuple
+from models.patient import Patient
 from app.config import FIELD_WEIGHTS, FIELD_TYPES, PENALTIES
 from app.matching.normalization import normalize_string
 from app.matching.constants import (
@@ -12,20 +13,19 @@ from app.matching.constants import (
 from .field_similarity import calculate_field_similarity
 
 
-def _get_normalized_precompute_values(patient1, patient2, field_name):
+def _get_normalized_precompute_values(
+    patient1: Patient, patient2: Patient, field_name: str
+):
     """Return normalized values for a field, using precomputed if available."""
     precomputed_key = PRECOMPUTED_NORMALIZATION_FIELDS.get(field_name)
     if precomputed_key:
-        n1 = patient1.get(precomputed_key, "")
-        n2 = patient2.get(precomputed_key, "")
+        n1 = getattr(patient1, precomputed_key, "")
+        n2 = getattr(patient2, precomputed_key, "")
     else:
-        raw1 = patient1.get(field_name)
-        raw2 = patient2.get(field_name)
+        raw1 = getattr(patient1, field_name, "")
+        raw2 = getattr(patient2, field_name, "")
         n1 = normalize_string(str(raw1) if raw1 is not None else "", field_name)
         n2 = normalize_string(str(raw2) if raw2 is not None else "", field_name)
-        normalized_key = precomputed_key or f"{field_name}Normalized"
-        patient1[normalized_key] = n1
-        patient2[normalized_key] = n2
     return n1, n2
 
 
@@ -40,14 +40,14 @@ def _update_breakdown_and_score(breakdown, field_name, sim, weight):
 
 
 def calculate_weighted_similarity(
-    patient1: Dict[str, Any], patient2: Dict[str, Any]
+    patient1: Patient, patient2: Patient
 ) -> Tuple[float, dict]:
     """
     Calculate the weighted similarity score between two patient records.
 
     Args:
-        patient1 (Dict[str, Any]): The first patient record.
-        patient2 (Dict[str, Any]): The second patient record.
+        patient1 (Patient): The first patient record.
+        patient2 (Patient): The second patient record.
 
     Returns:
         Tuple[float, dict]: A tuple containing the final similarity score and a breakdown dictionary.

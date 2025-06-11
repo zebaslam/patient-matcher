@@ -41,14 +41,14 @@ class TestNormalization(unittest.TestCase):
 
     def test_normalize_string(self):
         """Test normalization of strings by field type."""
-        self.assertEqual(normalize_string("02-Dec-1978", "DOB"), "1978-12-02")
+        self.assertEqual(normalize_string("02-Dec-1978", "dob"), "1978-12-02")
         self.assertEqual(
-            normalize_string("(123) 456-7890", "PhoneNumber"), "1234567890"
+            normalize_string("(123) 456-7890", "phone_number"), "1234567890"
         )
         self.assertEqual(
-            normalize_string("00123 Main Street Apt 4", "Address"), "123 main st"
+            normalize_string("00123 Main Street Apt 4", "address"), "123 main st"
         )
-        self.assertEqual(normalize_string("Hello, World!", "Other"), "hello world")
+        self.assertEqual(normalize_string("Hello, World!", "other"), "hello world")
 
 
 if __name__ == "__main__":
