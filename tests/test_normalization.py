@@ -50,6 +50,50 @@ class TestNormalization(unittest.TestCase):
         )
         self.assertEqual(normalize_string("Hello, World!", "other"), "hello world")
 
+    def test_extract_base_address_variants(self):
+        """Test extract_base_address with more variants and edge cases."""
+        self.assertEqual(
+            extract_base_address("00001 Oak Place, Suite 101"), "1 Oak Place"
+        )
+        self.assertEqual(extract_base_address("00000 Maple Ave."), "0 Maple Ave")
+        self.assertEqual(extract_base_address("789 Pine Dr."), "789 Pine Dr")
+        self.assertEqual(extract_base_address("456 Cedar Ct, Apt 12B"), "456 Cedar Ct")
+        self.assertEqual(extract_base_address("12 Spruce Blvd."), "12 Spruce Blvd")
+        self.assertEqual(extract_base_address("00000"), "0")
+        self.assertEqual(extract_base_address("Apt 4"), "")
+
+    def test_normalize_date_edge_cases(self):
+        """Test normalize_date with edge cases and invalid formats."""
+        self.assertEqual(normalize_date("2-Dec-1978"), "1978-12-02")
+        self.assertEqual(normalize_date("31-Feb-2000"), "31-Feb-2000")  # Invalid date
+        self.assertEqual(normalize_date(" 02-Dec-1978 "), "1978-12-02")
+        self.assertEqual(normalize_date("12/31/1999"), "12/31/1999")
+
+    def test_normalize_phone_edge_cases(self):
+        """Test _normalize_phone with edge cases."""
+        self.assertEqual(_normalize_phone("+1 (800) 555-0199"), "18005550199")
+        self.assertEqual(_normalize_phone("ext. 1234"), "1234")
+        self.assertEqual(_normalize_phone("abc-def-ghij"), "")
+
+    def test_normalize_address_abbreviations_and_typos(self):
+        """Test _normalize_address with various abbreviations and typos."""
+        self.assertEqual(_normalize_address("123 Main Stret"), "123 main st")
+        self.assertEqual(_normalize_address("456 North Avenue"), "456 n ave")
+        self.assertEqual(_normalize_address("789 South Boulevard"), "789 s blvd")
+        self.assertEqual(_normalize_address("101 West Drive"), "101 w dr")
+        self.assertEqual(_normalize_address("202 East Place"), "202 e pl")
+        self.assertEqual(_normalize_address("303 Court"), "303 ct")
+        self.assertEqual(_normalize_address("404 Suite"), "404 ste")
+
+    def test_normalize_string_general(self):
+        """Test normalize_string with general strings and unknown field names."""
+        self.assertEqual(
+            normalize_string("  Hello,   World!  ", "unknown"), "hello world"
+        )
+        self.assertEqual(normalize_string("Test@String#123", "random"), "teststring123")
+        self.assertEqual(normalize_string("", "address"), "")
+        self.assertEqual(normalize_string("APT 5", "address"), "apt 5")
+
 
 if __name__ == "__main__":
     unittest.main()

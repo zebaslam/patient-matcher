@@ -62,18 +62,28 @@ def extract_base_address(addr: str) -> str:
     if not addr:
         return ""
 
-    # Remove leading zeros from house numbers
+    addr = addr.strip()
+
+    # If address starts with apartment/unit/suite, return empty string
+    if re.match(r"^(Apt|Apartment|Suite|Ste|Unit|#)\b", addr, flags=re.IGNORECASE):
+        return ""
+
+    # If address is just a number (possibly with leading zeros)
+    if re.fullmatch(r"0*\d+", addr):
+        return str(int(addr))
+
+    # Remove leading zeros from house numbers (including hyphenated, e.g., 0456-B)
     addr = re.sub(r"^0+(\d[\w\-]*)", r"\1", addr)
 
-    # Remove trailing punctuation
-    addr = re.sub(r"[.,]+$", "", addr)
-
-    # Remove apartment/unit/suite information
+    # Remove apartment/unit/suite info and everything after
     addr = re.split(
         r"\b(?:Apt|Apartment|Suite|Ste|Unit|#)\b", addr, flags=re.IGNORECASE
     )[0]
 
-    # Collapse multiple spaces and trim
+    # Remove any trailing punctuation and whitespace (including spaces before punctuation)
+    addr = re.sub(r"[\s,\.]+$", "", addr)
+
+    # Collapse spaces and trim
     return re.sub(r"\s+", " ", addr).strip()
 
 
@@ -82,11 +92,24 @@ def _normalize_address(addr_str: str) -> str:
     if not addr_str:
         return ""
 
-    # Use base address (strip apartment/unit/suite)
-    addr_str = extract_base_address(addr_str)
+    # Special case: if address is just "APT 5", "Suite 2", etc.
+    m = re.match(
+        r"^(apt|apartment|suite|ste|unit|#)\s+(\w+)$", addr_str.strip(), re.IGNORECASE
+    )
+    if m:
+        abbrev = REPLACEMENTS_LOWER.get(m.group(1).lower(), m.group(1).lower())
+        return f"{abbrev} {m.group(2).lower()}"
 
-    # Convert to lowercase and clean up
-    normalized = addr_str.lower().strip()
+    # Special case: if address is "<number> <suite-type>"
+    m2 = re.match(
+        r"^(\d+)\s+(suite|ste|apartment|apt|unit|#)$", addr_str.strip(), re.IGNORECASE
+    )
+    if m2:
+        abbrev = REPLACEMENTS_LOWER.get(m2.group(2).lower(), m2.group(2).lower())
+        return f"{m2.group(1)} {abbrev}"
+
+    # Use base address (strip apartment/unit/suite)
+    normalized = extract_base_address(addr_str).lower().strip()
 
     # Standardize common abbreviations
     normalized = REPLACEMENTS_PATTERN.sub(
@@ -113,12 +136,14 @@ def normalize_string(s: str, field_name: str) -> str:
     Returns:
         The normalized string.
     """
-    if field_name == "DOB".casefold():
-        return normalize_date(s)
-    if field_name == "phone_number":
-        return _normalize_phone(s)
-    if field_name == "address".casefold():
-        return _normalize_address(s)
-    # General string normalization
-    normalized = re.sub(r"[^\w\s]", "", str(s).lower())
-    return re.sub(r"\s+", " ", normalized).strip()
+    match field_name.casefold():
+        case "dob":
+            return normalize_date(s)
+        case "phone_number":
+            return _normalize_phone(s)
+        case "address":
+            return _normalize_address(s)
+        case _:
+            # General string normalization
+            normalized = re.sub(r"[^\w\s]", "", str(s).lower())
+            return re.sub(r"\s+", " ", normalized).strip()

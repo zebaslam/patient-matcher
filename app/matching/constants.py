@@ -7,8 +7,8 @@ This module defines precomputed normalization field mappings used in the patient
 from typing import Dict
 
 PRECOMPUTED_NORMALIZATION_FIELDS: Dict[str, str] = {
-    "dob": "DOBNormalized",
-    "sex": "SexNormalized",
+    "dob": "dob_normalized",
+    "sex": "sex_normalized",
 }
 
 NORMALIZED_FIELDS = {
