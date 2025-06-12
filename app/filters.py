@@ -2,11 +2,13 @@ import re
 
 
 def camel_to_title(text):
-    """Convert camelCase to Title Case with spaces."""
+    """Convert camelCase or snake_case to Title Case with spaces."""
+    # Replace underscores with spaces
+    text = text.replace("_", " ")
     # Insert space before uppercase letters (except the first one)
-    result = re.sub(r"(?<!^)(?=[A-Z])", " ", text)
+    text = re.sub(r"(?<!^)(?=[A-Z])", " ", text)
     # Capitalize first letter of each word
-    return result.title()
+    return text.title()
 
 
 def jinja_attribute(obj, name, default=None):
