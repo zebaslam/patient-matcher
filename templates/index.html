@@ -1,132 +1,139 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head>
-  <title>Patient Matcher</title>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body class="bg-light">
+  <head>
+    <title>Patient Matcher</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="container py-5">
+      <h1 class="mb-4 fw-bold">
+        Total Suggested Matches
+        <span id="matches-counter" class="badge bg-primary fs-5"
+          >{{ matches|length }}</span
+        >
+      </h1>
 
-<div class="container py-5">
-  <h1 class="mb-4">
-    Total Suggested Matches
-    <span id="matches-counter" class="badge bg-primary">{{ matches|length }}</span>
-  </h1>
+      {% for match in matches %} {% set ext_id = match.external |
+      attribute('patient_id') %} {% set int_id = match.internal |
+      attribute('patient_id') %} {% set match_id = "match-card-" ~ ext_id ~ "-"
+      ~ int_id %}
 
-  {% for match in matches %}
-    {% set ext_id = match.external | attribute('patient_id') %}
-    {% set int_id = match.internal | attribute('patient_id') %}
-    {% set match_id = "match-card-" ~ ext_id ~ "-" ~ int_id %}
-
-    <div class="card mb-4" id="{{ match_id }}">
-      <div class="card-body">
-        <h5 class="card-title">Match Score: {{ match.score }}</h5>
-
-        <div class="row">
-          <div class="col-md-6">
-            <h6>External Patient</h6>
-            <div class="card bg-light">
-              <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <button class="btn btn-outline-secondary btn-sm"
-                          type="button"
-                          data-patient='{{ match.external|tojson|safe }}'
-                          onclick="copyPatientJsonFromButton(this, 'External Patient')">
-                    Copy as JSON
-                  </button>
+      <div
+        class="card mb-5 shadow-lg border-0 rounded-5 p-4"
+        id="{{ match_id }}"
+      >
+        <div class="card-header bg-white border-0 pb-0 rounded-5">
+          <h5 class="card-title fw-semibold mb-0">
+            Match Score:
+            <span class="text-primary">{{ match.score|round(3) }}</span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-4">
+            <div class="col-12 col-md-6 mb-4 mb-md-0">
+              <h6 class="fw-bold text-secondary mb-3 border-bottom pb-1">
+                External Patient
+              </h6>
+              <div class="card bg-white border rounded-4 shadow-sm">
+                <div class="card-body p-3">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-3"
+                  >
+                    <span></span>
+                    <button
+                      class="btn btn-outline-secondary btn-sm"
+                      type="button"
+                      aria-label="Copy External Patient as JSON"
+                      data-patient="{{ match.external|tojson|safe }}"
+                      onclick="copyPatientJsonFromButton(this, 'External Patient')"
+                    >
+                      <i class="bi bi-clipboard"></i> Copy as JSON
+                    </button>
+                  </div>
+                  {% set patient = match.external %} {% set external =
+                  match.external %} {% set internal = match.internal %} {%
+                  include "_patient_fields.html" %}
                 </div>
-                {% set patient = match.external %}
-                {% set external = match.external %}
-                {% set internal = match.internal %}
-                {% include "_patient_fields.html" %}
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <h6 class="fw-bold text-secondary mb-3 border-bottom pb-1">
+                Internal Patient
+              </h6>
+              <div class="card bg-white border rounded-4 shadow-sm">
+                <div class="card-body p-3">
+                  <div
+                    class="d-flex justify-content-between align-items-center mb-3"
+                  >
+                    <span></span>
+                    <button
+                      class="btn btn-outline-secondary btn-sm"
+                      type="button"
+                      aria-label="Copy Internal Patient as JSON"
+                      data-patient="{{ match.internal|tojson|safe }}"
+                      onclick="copyPatientJsonFromButton(this, 'Internal Patient')"
+                    >
+                      <i class="bi bi-clipboard"></i> Copy as JSON
+                    </button>
+                  </div>
+                  {% set patient = match.internal %} {% set external =
+                  match.external %} {% set internal = match.internal %} {%
+                  include "_patient_fields.html" %}
+                </div>
               </div>
             </div>
           </div>
-          <div class="col-md-6">
-            <h6>Internal Patient</h6>
-            <div class="card bg-light">
-              <div class="card-body p-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <button class="btn btn-outline-secondary btn-sm"
-                          type="button"
-                          data-patient='{{ match.internal|tojson|safe }}'
-                          onclick="copyPatientJsonFromButton(this, 'Internal Patient')">
-                    Copy as JSON
-                  </button>
-                </div>
-                {% set patient = match.internal %}
-                {% set external = match.external %}
-                {% set internal = match.internal %}
-                {% include "_patient_fields.html" %}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div class="mt-3">
-          <button class="btn btn-success btn-sm me-2"
-                  onclick="acceptMatch('{{ ext_id }}', '{{ int_id }}')">
-            Accept
-          </button>
-          <button class="btn btn-danger btn-sm"
-                  onclick="removeMatchCard('{{ ext_id }}', '{{ int_id }}')">
-            Reject
-          </button>
-          <!-- Score Breakdown Button with Info Tooltip -->
-          <button class="btn btn-secondary btn-sm ms-2"
-                  type="button"
-                  data-bs-toggle="collapse"
-                  data-bs-target="#breakdown-{{ ext_id }}-{{ int_id }}"
-                  aria-expanded="false"
-                  aria-controls="breakdown-{{ ext_id }}-{{ int_id }}"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="top"
-                  title="See how the match score was calculated, including field-by-field similarity and penalties.">
-            Show Score Breakdown
-            <span class="badge rounded-circle bg-info text-dark ms-1" style="cursor: pointer;">i</span>
-          </button>
-        </div>
-        <!-- Collapsible Breakdown Section -->
-        <div class="collapse mt-3" id="breakdown-{{ ext_id }}-{{ int_id }}">
-          <div class="card card-body">
-            <h6>Score Breakdown</h6>
-            <div class="table-responsive mb-2">
-              <table class="table table-sm table-bordered align-middle mb-0">
-                <thead class="table-light">
-                  <tr>
-                    <th>Field</th>
-                    <th>Similarity</th>
-                    <th>Weight</th>
-                    <th>Weighted Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for field, info in match.breakdown.fields.items() %}
-                    <tr>
-                      <td><strong>{{ field|camel_to_title }}</strong></td>
-                      <td>{{ info.similarity|round(3) }}</td>
-                      <td>{{ info.weight }}</td>
-                      <td>{{ info.weighted_score|round(3) }}</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <strong>Final Score:</strong> {{ match.breakdown.final_score|round(3) }}
-            </div>
+          <div class="btn-group mt-4 mb-3" role="group">
+            <button
+              class="btn btn-success rounded-pill me-2 px-3"
+              onclick="acceptMatch('{{ ext_id }}', '{{ int_id }}')"
+              aria-label="Accept Match"
+            >
+              <i class="bi bi-check-circle"></i> Accept
+            </button>
+            <button
+              class="btn btn-danger rounded-pill me-2 px-3"
+              onclick="removeMatchCard('{{ ext_id }}', '{{ int_id }}')"
+              aria-label="Reject Match"
+            >
+              <i class="bi bi-x-circle"></i> Reject
+            </button>
+            <button
+              class="btn btn-secondary rounded-pill px-3"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#breakdown-{{ ext_id }}-{{ int_id }}"
+              aria-expanded="false"
+              aria-controls="breakdown-{{ ext_id }}-{{ int_id }}"
+              data-bs-placement="top"
+              title="See how the match score was calculated, including field-by-field similarity and penalties."
+              aria-label="Show Score Breakdown"
+            >
+              <i class="bi bi-info-circle"></i> Show Score Breakdown
+            </button>
           </div>
+          {% include "_score_breakdown.html" %}
         </div>
       </div>
+      {% endfor %}
     </div>
-  {% endfor %}
 
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
-
-</body>
+    <!-- Bootstrap JS and Bootstrap Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+  </body>
 </html>
