@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from models.patient import Patient  # Import the real Patient class
+from app.models.patient import Patient  # Import the real Patient class
 
 from app.matching.matcher import match_patients, _normalized_fields_identical
 

@@ -1,7 +1,7 @@
 """Patient similarity scoring logic."""
 
 from typing import Tuple
-from models.patient import Patient
+from app.models.patient import Patient
 from app.config import FIELD_WEIGHTS, FIELD_TYPES, PENALTIES
 from app.matching.constants import (
     CRITICAL_FIELDS,
@@ -64,10 +64,15 @@ def calculate_weighted_similarity(
         total_weighted_score += wscore
         total_weight_used += weight
 
+    penalty = _calculate_penalty(breakdown)
     final_score = total_weighted_score / total_weight_used if total_weight_used else 0.0
-    final_score = max(DEFAULT_SIMILARITY, final_score - _calculate_penalty(breakdown))
+    final_score = max(DEFAULT_SIMILARITY, final_score - penalty)
 
-    return final_score, {"fields": breakdown, "final_score": final_score}
+    return final_score, {
+        "fields": breakdown,
+        "final_score": final_score,
+        "penalty": penalty,
+    }
 
 
 def _calculate_penalty(breakdown: dict) -> float:

@@ -1,7 +1,7 @@
 """Main patient matching API."""
 
 from typing import List
-from models.patient import Patient
+from app.models.patient import Patient
 from app.config import MATCH_THRESHOLD
 from app.matching.scoring import calculate_weighted_similarity
 from app.matching.constants import PRECOMPUTED_NORMALIZATION_FIELDS

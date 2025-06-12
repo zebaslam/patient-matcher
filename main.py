@@ -21,7 +21,7 @@ PATIENT_FIELDS = [
 
 def create_app() -> Flask:
     """Create and configure the Flask application."""
-    flask_app = Flask(__name__)
+    flask_app = Flask(__name__, template_folder="app/templates")
     logging.basicConfig(level=getattr(logging, LOG_LEVEL))
     register_filters(flask_app)
 

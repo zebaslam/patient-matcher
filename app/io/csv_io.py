@@ -12,7 +12,7 @@ from app.config import (
     MATCHES_CSV_PATH,
     ACCEPTED_CSV_PATH,
 )
-from models.patient import Patient
+from app.models.patient import Patient
 
 
 OUTPUT_HEADER = ["ExternalPatientId", "InternalPatientId"]
