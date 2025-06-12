@@ -1,103 +1,80 @@
 import unittest
-from app.matching.field_similarity import FieldSimilarityCalculator
+from app.config import PHONE_PARTIAL_MATCH
+from app.matching.field_similarity import (
+    calculate_field_similarity,
+    first_name_similarity,
+    last_name_similarity,
+    phone_similarity,
+    address_similarity,
+    parse_address,
+    general_similarity,
+)
 
 
-# pylint: disable=W0212
-class TestFieldSimilarityCalculator(unittest.TestCase):
-    """Unit tests for the FieldSimilarityCalculator class and its internal handlers."""
+class TestFieldSimilarity(unittest.TestCase):
+    """Unit tests for field similarity functions."""
 
-    def test_init_field_handlers_keys(self):
-        """Test that __init__ creates _field_handlers with correct keys."""
-        calculator = FieldSimilarityCalculator()
-        expected_keys = {"PhoneNumber", "Address"}
-        # Accessing protected member for testing purposes
-        self.assertEqual(set(calculator._field_handlers.keys()), expected_keys)
+    def test_first_name_similarity(self):
+        """Test similarity between first names."""
+        self.assertEqual(first_name_similarity("John", "John"), 1.0)
+        self.assertAlmostEqual(first_name_similarity("John", "Jon"), 0.9, places=1)
+        self.assertEqual(first_name_similarity("John", "Jane"), 0.0)
 
-    def test_init_field_handlers_values_are_callable(self):
-        """Test that __init__ creates _field_handlers with callable values."""
-        calculator = FieldSimilarityCalculator()
-        for key, handler in calculator._field_handlers.items():
-            with self.subTest(key=key):
-                # Accessing protected member for testing purposes
-                self.assertTrue(callable(handler))
+    def test_last_name_similarity(self):
+        """Test similarity between last names."""
+        self.assertEqual(last_name_similarity("Smith", "Smith"), 1.0)
+        self.assertGreater(last_name_similarity("Smith", "Smyth"), 0.8)
+        self.assertEqual(last_name_similarity("Smith", "Jones"), 0.0)
 
-    def test_init_field_handlers_correct_methods(self):
-        """Test that __init__ maps field handlers to correct methods."""
-        calculator = FieldSimilarityCalculator()
-        # Accessing protected member for testing purposes
+    def test_phone_similarity(self):
+        """Test similarity between phone numbers."""
+        self.assertEqual(phone_similarity("123-456-7890", "1234567890"), 1.0)
         self.assertEqual(
-            calculator._field_handlers["PhoneNumber"], calculator._phone_similarity
+            phone_similarity("123-456-7890", "456-7890"), PHONE_PARTIAL_MATCH
+        )
+        self.assertGreaterEqual(phone_similarity("123-456-7890", "123-456-7891"), 0.9)
+        self.assertGreater(phone_similarity("123-456-7890", "123-456-0000"), 0.0)
+        self.assertEqual(phone_similarity("123-456-7890", "000-000-0000"), 0.0)
+
+    def test_address_similarity(self):
+        """Test similarity between addresses."""
+        self.assertEqual(address_similarity("123 Main St", "123 Main St"), 1.0)
+        self.assertGreater(address_similarity("123 Main St", "123 Main"), 0.0)
+        self.assertGreater(address_similarity("123 Main St", "456 Main St"), 0.0)
+        self.assertEqual(address_similarity("123 Main St", "456 Elm St"), 0.0)
+
+    def test_parse_address(self):
+        """Test parsing of address into number and street."""
+        self.assertEqual(parse_address("123 Main St"), ("123", "main st"))
+        self.assertEqual(parse_address("Main St"), ("", "st"))
+        self.assertEqual(parse_address("456 Elm"), ("456", "elm"))
+
+    def test_general_similarity(self):
+        """Test general similarity between normalized strings."""
+        self.assertEqual(general_similarity("abc", "abc"), 1.0)
+        self.assertGreater(general_similarity("abc def", "abc xyz"), 0.0)
+        self.assertEqual(general_similarity("abc", "xyz"), 0.0)
+
+    def test_calculate_field_similarity(self):
+        """Test calculate_field_similarity for various field types."""
+        self.assertEqual(
+            calculate_field_similarity("John", "John", "name", "first_name"), 1.0
         )
         self.assertEqual(
-            calculator._field_handlers["Address"], calculator._address_similarity
-        )
-
-    def test_init_type_handlers_keys(self):
-        """Test that __init__ creates _type_handlers with correct keys."""
-        calculator = FieldSimilarityCalculator()
-        expected_keys = {"exact", "name", "general"}
-        # Accessing protected member for testing purposes
-        self.assertEqual(set(calculator._type_handlers.keys()), expected_keys)
-
-    def test_init_type_handlers_values_are_callable(self):
-        """Test that __init__ creates _type_handlers with callable values."""
-        calculator = FieldSimilarityCalculator()
-        for key, handler in calculator._type_handlers.items():
-            with self.subTest(key=key):
-                # Accessing protected member for testing purposes
-                self.assertTrue(callable(handler))
-
-    def test_init_type_handlers_correct_methods(self):
-        """Test that __init__ maps type handlers to correct methods."""
-        calculator = FieldSimilarityCalculator()
-        # Accessing protected member for testing purposes
-        self.assertEqual(calculator._type_handlers["name"], calculator._name_similarity)
-        self.assertEqual(
-            calculator._type_handlers["general"], calculator._general_similarity
-        )
-
-    def test_init_exact_handler_lambda_function(self):
-        """Test that __init__ creates correct lambda function for exact handler."""
-        calculator = FieldSimilarityCalculator()
-        # Accessing protected member for testing purposes
-        exact_handler = calculator._type_handlers["exact"]
-
-        # Test exact match returns 1.0
-        self.assertEqual(exact_handler("test", "test"), 1.0)
-
-        # Test non-match returns 0.0
-        self.assertEqual(exact_handler("test", "different"), 0.0)
-        self.assertEqual(exact_handler("", "test"), 0.0)
-        self.assertEqual(exact_handler("test", ""), 0.0)
-
-    def test_init_field_handlers_count(self):
-        """Test that __init__ creates correct number of field handlers."""
-        calculator = FieldSimilarityCalculator()
-        # Accessing protected member for testing purposes
-        self.assertEqual(len(calculator._field_handlers), 2)
-
-    def test_init_type_handlers_count(self):
-        """Test that __init__ creates correct number of type handlers."""
-        calculator = FieldSimilarityCalculator()
-        # Accessing protected member for testing purposes
-        self.assertEqual(len(calculator._type_handlers), 3)
-
-    def test_init_creates_separate_instances(self):
-        """Test that __init__ creates separate handler dictionaries for different instances."""
-        calculator1 = FieldSimilarityCalculator()
-        calculator2 = FieldSimilarityCalculator()
-
-        # Dictionaries should be separate objects
-        # Accessing protected member for testing purposes
-        self.assertIsNot(calculator1._field_handlers, calculator2._field_handlers)
-        self.assertIsNot(calculator1._type_handlers, calculator2._type_handlers)
-
-        # But should have same content
-        self.assertEqual(
-            calculator1._field_handlers.keys(), calculator2._field_handlers.keys()
+            calculate_field_similarity(
+                "123-456-7890", "1234567890", "any", "phone_number"
+            ),
+            1.0,
         )
         self.assertEqual(
-            calculator1._type_handlers.keys(), calculator2._type_handlers.keys()
+            calculate_field_similarity("123 Main St", "123 Main St", "any", "address"),
+            1.0,
+        )
+        self.assertEqual(
+            calculate_field_similarity("abc", "abc", "exact", "OtherField"), 1.0
+        )
+        self.assertEqual(
+            calculate_field_similarity("abc", "xyz", "exact", "OtherField"), 0.0
         )
 
 

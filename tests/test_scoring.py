@@ -70,20 +70,16 @@ class TestScoring(unittest.TestCase):
         }
         patcher1 = patch("app.matching.scoring.FIELD_WEIGHTS", self.field_weights)
         patcher2 = patch("app.matching.scoring.FIELD_TYPES", self.field_types)
-        patcher3 = patch("app.matching.scoring.PENALTIES", self.penalties)
         patcher4 = patch("app.matching.scoring.CRITICAL_FIELDS", self.critical_fields)
         patcher5 = patch(
             "app.matching.scoring.NORMALIZED_FIELDS", self.normalized_fields
         )
-        patcher6 = patch("app.matching.scoring.DEFAULT_PENALTY", 0.0)
         patcher7 = patch("app.matching.scoring.DEFAULT_SIMILARITY", 0.0)
         self.patchers = [
             patcher1,
             patcher2,
-            patcher3,
             patcher4,
             patcher5,
-            patcher6,
             patcher7,
         ]
         for p in self.patchers:
@@ -137,32 +133,6 @@ class TestScoring(unittest.TestCase):
         self.assertIn("dob", details["fields"])
         self.assertNotIn("last_name", details["fields"])
 
-    @patch("app.matching.scoring.calculate_field_similarity")
-    def test_penalty_multiple_fields(self, mock_sim):
-        """
-        Test that penalties are correctly applied for multiple fields.
-        """
-        penalties = {"dob": 0.1, "first_name": 0.2}
-        with patch("app.matching.scoring.PENALTIES", penalties):
-
-            def sim_side_effect(___, _, __, f):
-                if f == "dob":
-                    return 0.4
-                if f == "first_name":
-                    return 0.3
-                return 1.0
-
-            mock_sim.side_effect = sim_side_effect
-            p1 = DummyPatient(
-                first_name_norm="Jon", last_name_norm="Doe", dob_norm="1990-01-01"
-            )
-            p2 = DummyPatient(
-                first_name_norm="John", last_name_norm="Doe", dob_norm="1980-01-01"
-            )
-            score, details = scoring.calculate_weighted_similarity(p1, p2)
-            self.assertLess(score, 1.0)
-            self.assertAlmostEqual(details.get("penalty", 0.0), 0.3)
-
     def test__get_normalized_precompute_values_missing_norm(self):
         """
         Test that _get_normalized_precompute_values falls back to field_name_norm if not in NORMALIZED_FIELDS.
@@ -181,30 +151,6 @@ class TestScoring(unittest.TestCase):
         wscore = scoring._update_breakdown_and_score(breakdown, "foo", 0.5, 0.0)
         self.assertEqual(breakdown["foo"]["weighted_score"], 0.0)
         self.assertEqual(wscore, 0.0)
-
-    def test__calculate_penalty_no_penalty(self):
-        """
-        Test that _calculate_penalty returns zero when no penalties apply.
-        """
-        breakdown = {
-            "dob": {"similarity": 0.8, "weight": 3.0, "weighted_score": 2.4},
-            "first_name": {"similarity": 1.0, "weight": 2.0, "weighted_score": 2.0},
-        }
-        penalty = scoring._calculate_penalty(breakdown)
-        self.assertEqual(penalty, 0.0)
-
-    def test__calculate_penalty_multiple(self):
-        """
-        Test that _calculate_penalty returns the sum of penalties for all penalized fields.
-        """
-        penalties = {"dob": 0.1, "first_name": 0.2}
-        with patch("app.matching.scoring.PENALTIES", penalties):
-            breakdown = {
-                "dob": {"similarity": 0.4, "weight": 3.0, "weighted_score": 1.2},
-                "first_name": {"similarity": 0.3, "weight": 2.0, "weighted_score": 0.6},
-            }
-            penalty = scoring._calculate_penalty(breakdown)
-            self.assertAlmostEqual(penalty, 0.3)
 
 
 if __name__ == "__main__":

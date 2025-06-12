@@ -22,7 +22,7 @@ NORMALIZED_FIELDS = {
     # Add more fields as needed
 }
 
-CRITICAL_FIELDS = {"dob", "first_name", "address"}
+CRITICAL_FIELDS = {"dob", "first_name"}
 
 DEFAULT_SIMILARITY = 0.0
 DEFAULT_PENALTY = 0.0

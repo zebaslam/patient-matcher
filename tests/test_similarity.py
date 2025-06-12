@@ -5,15 +5,6 @@ from app.matching import string_similarity
 class TestSimilarityMetrics(unittest.TestCase):
     """Unit tests for string similarity functions."""
 
-    def test_levenshtein_distance(self):
-        """Test Levenshtein distance calculation."""
-        self.assertEqual(string_similarity.levenshtein_distance("kitten", "sitting"), 3)
-        self.assertEqual(string_similarity.levenshtein_distance("flaw", "lawn"), 2)
-        self.assertEqual(string_similarity.levenshtein_distance("", ""), 0)
-        self.assertEqual(string_similarity.levenshtein_distance("abc", ""), 3)
-        self.assertEqual(string_similarity.levenshtein_distance("", "abc"), 3)
-        self.assertEqual(string_similarity.levenshtein_distance("abc", "abc"), 0)
-
     def test_normalized_similarity(self):
         """Test normalized similarity ratio calculation."""
         self.assertAlmostEqual(

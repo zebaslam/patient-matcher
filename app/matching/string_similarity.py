@@ -277,13 +277,10 @@ class SimilarityMetrics:
 
 
 # Convenience functions for backward compatibility and ease of use
-def levenshtein_distance(s1: str, s2: str) -> int:
-    """Calculate Levenshtein distance between two strings."""
-    return SimilarityMetrics.levenshtein_distance(s1, s2)
 
 
 def similarity_ratio(s1: str, s2: str) -> float:
-    """Calculate normalized similarity ratio between two strings."""
+    """Calculate normalized similarity ratio between two strings using levenshtein distance."""
     return SimilarityMetrics.normalized_similarity(s1, s2)
 
 

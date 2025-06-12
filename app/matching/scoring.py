@@ -2,11 +2,10 @@
 
 from typing import Tuple
 from app.models.patient import Patient
-from app.config import FIELD_WEIGHTS, FIELD_TYPES, PENALTIES
+from app.config import FIELD_WEIGHTS, FIELD_TYPES
 from app.matching.constants import (
     CRITICAL_FIELDS,
     NORMALIZED_FIELDS,
-    DEFAULT_PENALTY,
     DEFAULT_SIMILARITY,
 )
 from .field_similarity import calculate_field_similarity
@@ -54,7 +53,7 @@ def calculate_weighted_similarity(
         sim = calculate_field_similarity(
             n1, n2, FIELD_TYPES.get(field_name, "general"), field_name
         )
-        if field_name in CRITICAL_FIELDS and sim <= 0.05:
+        if field_name in CRITICAL_FIELDS and sim <= 0.55:
             return DEFAULT_SIMILARITY, {
                 "early_exit": f"{field_name} too dissimilar",
                 "fields": breakdown,
@@ -64,24 +63,7 @@ def calculate_weighted_similarity(
         total_weighted_score += wscore
         total_weight_used += weight
 
-    penalty = _calculate_penalty(breakdown)
     final_score = total_weighted_score / total_weight_used if total_weight_used else 0.0
-    final_score = max(DEFAULT_SIMILARITY, final_score - penalty)
+    final_score = max(DEFAULT_SIMILARITY, final_score)
 
-    return final_score, {
-        "fields": breakdown,
-        "final_score": final_score,
-        "penalty": penalty,
-    }
-
-
-def _calculate_penalty(breakdown: dict) -> float:
-    penalty = DEFAULT_PENALTY
-
-    # Example: apply penalty if similarity for a field is very low
-    for field, field_penalty in PENALTIES.items():
-        sim = breakdown.get(field, {}).get("similarity", 1.0)
-        if sim < 0.5:  # or another threshold
-            penalty += field_penalty
-
-    return penalty
+    return final_score, {"fields": breakdown, "final_score": final_score}
