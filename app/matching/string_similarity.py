@@ -1,10 +1,11 @@
 """String similarity algorithms for patient matching and record linkage."""
 
 from typing import Set, Tuple
+from .constants import JARO_THRESHOLD
 
 
 def validate_strings(s1: str, s2: str) -> Tuple[str, str]:
-    """Ensure both inputs are strings and strip whitespace."""
+    """Ensure both inputs are strings and strip leading and trailing whitespace."""
     if not isinstance(s1, str) or not isinstance(s2, str):
         raise TypeError("Both inputs must be strings")
     return s1.strip(), s2.strip()
@@ -31,9 +32,10 @@ class SimilarityMetrics:
         for i, ca in enumerate(a):
             curr_row = [i + 1]
             for j, cb in enumerate(b):
+                substitution_cost = 1 if ca != cb else 0
                 insert = prev_row[j + 1] + 1
                 delete = curr_row[j] + 1
-                subst = prev_row[j] + (ca != cb)
+                subst = prev_row[j] + substitution_cost
                 curr_row.append(min(insert, delete, subst))
             prev_row = curr_row
         return prev_row[-1]
@@ -62,8 +64,17 @@ class SimilarityMetrics:
         return len(intersection) / len(union)
 
     @classmethod
-    def jaro_similarity(cls, s1: str, s2: str) -> float:
-        """Jaro similarity (0.0–1.0), effective for short strings."""
+    def compute_jaro_similarity(cls, s1: str, s2: str) -> float:
+        """
+        Jaro similarity (0.0–1.0), effective for short strings.
+
+        The formula for Jaro similarity is:
+        J = (1/3) * (m/|s1| + m/|s2| + (m - t)/m),
+        where:
+        - m is the number of matching characters,
+        - t is the number of transpositions,
+        - |s1| and |s2| are the lengths of the strings s1 and s2.
+        """
         s1, s2 = validate_strings(s1, s2)
         if not s1 and not s2:
             return 1.0
@@ -75,18 +86,19 @@ class SimilarityMetrics:
         matches, transpositions = cls._find_jaro_matches(s1, s2)
         if matches == 0:
             return 0.0
-        return (
-            matches / len(s1)
-            + matches / len(s2)
-            + (matches - transpositions / 2) / matches
-        ) / 3
+        match_ratio_s1 = matches / len(s1)
+        match_ratio_s2 = matches / len(s2)
+        transposition_ratio = (matches - (transpositions / 2)) / matches
+        return (match_ratio_s1 + match_ratio_s2 + transposition_ratio) / 3
 
     @classmethod
     def _find_jaro_matches(cls, s1: str, s2: str) -> Tuple[int, int]:
         """Find matches and transpositions for Jaro similarity."""
+        s1, s2 = validate_strings(s1, s2)
         len1, len2 = len(s1), len(s2)
-        window = max(len1, len2) // 2 - 1
-        window = max(0, window)
+        window = max(len1, len2) // 2 - 1 if len1 > 0 and len2 > 0 else 0
+        if len1 == 0 or len2 == 0:
+            window = 0
         s1_matches, s2_matches, matches = cls._find_character_matches(s1, s2, window)
         transpositions = (
             cls._count_transpositions(s1, s2, s1_matches, s2_matches) if matches else 0
@@ -134,15 +146,13 @@ class SimilarityMetrics:
         cls, s1: str, s2: str, prefix_weight: float = 0.1
     ) -> float:
         """Jaro-Winkler similarity (0.0–1.0) with prefix bonus."""
-        if not 0 <= prefix_weight <= 0.25:
-            raise ValueError("prefix_weight must be between 0 and 0.25")
         s1, s2 = validate_strings(s1, s2)
-        jaro = cls.jaro_similarity(s1, s2)
-        if jaro < 0.7:
+        jaro = cls.compute_jaro_similarity(s1, s2)
+        if jaro < JARO_THRESHOLD:
             return jaro
         prefix_len = 0
-        for a, b in zip(s1, s2):
-            if a == b and prefix_len < 4:
+        for i in range(min(len(s1), len(s2))):
+            if s1[i] == s2[i] and prefix_len < 4:
                 prefix_len += 1
             else:
                 break
@@ -154,7 +164,14 @@ class SimilarityMetrics:
     ) -> float:
         """
         Hybrid Jaccard-Levenshtein similarity for robust address matching.
-        Each token in s1 is matched to the most similar token in s2 (above threshold).
+
+        This method combines Jaccard similarity and Levenshtein distance to handle
+        variations in address formatting and spelling. It tokenizes the input strings
+        into sets of words and matches each token in the first string to the most
+        similar token in the second string, provided the similarity exceeds a given
+        threshold. The algorithm is particularly effective for address matching as it
+        accounts for partial matches, typographical errors, and differences in token
+        order, ensuring robust comparison even in noisy or inconsistent data.
         """
         s1, s2 = validate_strings(s1, s2)
         tokens1, tokens2 = list(cls._tokenize(s1)), list(cls._tokenize(s2))
@@ -166,16 +183,15 @@ class SimilarityMetrics:
         matched_indices = set()
         match_count = 0
         for t1 in tokens1:
-            candidates = [
-                (j, cls.normalized_levenshtein_similarity(t1, t2))
-                for j, t2 in enumerate(tokens2)
-                if j not in matched_indices
-            ]
-            if candidates:
-                best_j, best_sim = max(candidates, key=lambda x: x[1])
-                if best_sim >= token_sim_threshold:
-                    match_count += 1
-                    matched_indices.add(best_j)
+            best_j, best_sim = None, 0.0
+            for j, t2 in enumerate(tokens2):
+                if j not in matched_indices:
+                    sim = cls.normalized_levenshtein_similarity(t1, t2)
+                    if sim > best_sim:
+                        best_j, best_sim = j, sim
+            if best_j is not None and best_sim >= token_sim_threshold:
+                match_count += 1
+                matched_indices.add(best_j)
         union = len(tokens1) + len(tokens2) - match_count
         return match_count / union if union > 0 else 1.0
 
