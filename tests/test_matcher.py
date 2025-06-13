@@ -9,6 +9,7 @@ class DummyPatient(Patient):  # Inherit from Patient for type compatibility
     """A dummy patient for testing."""
 
     def __init__(self, **fields):
+        self.normalized = False  # Set before super().__init__
         super().__init__(
             patient_id="",
             first_name="",
@@ -22,7 +23,6 @@ class DummyPatient(Patient):  # Inherit from Patient for type compatibility
         )  # Provide empty string for all required parameters
         for k, v in fields.items():
             setattr(self, k, v)
-        self.normalized = False
 
     def normalize_precomputed_fields(self):
         self.normalized = True

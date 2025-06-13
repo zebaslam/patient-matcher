@@ -48,11 +48,7 @@ def match_patients(internal: List[Patient], external: List[Patient]) -> List[dic
     """Match patients using weighted field similarity with early filtering. Only the best match per external patient is selected if above threshold."""
     matches = []
 
-    for p in internal:
-        p.normalize_precomputed_fields()
-
     for external_patient in external:
-        external_patient.normalize_precomputed_fields()
         best_internal, best_score, best_breakdown = _find_best_internal_match(
             external_patient, internal
         )
