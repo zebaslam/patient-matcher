@@ -115,6 +115,109 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(match_patients([DummyPatient(dob_norm="1990-01-01")], []), [])
         self.assertEqual(match_patients([], [DummyPatient(dob_norm="1990-01-01")]), [])
 
+    def test_match_patients_multiple_matches(self):
+        """Test match_patients returns multiple matches when appropriate."""
+        with patch(
+            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
+            {"dob": "dob_norm"},
+        ), patch("app.matching.matcher.MATCH_THRESHOLD", 0.7), patch(
+            "app.matching.matcher.calculate_weighted_similarity"
+        ) as mock_calc_sim:
+            p1 = DummyPatient(dob_norm="1990-01-01")
+            p2 = DummyPatient(dob_norm="1990-01-01")
+            p3 = DummyPatient(dob_norm="1990-01-01")
+            external = [
+                Patient(
+                    patient_id="1",
+                    first_name="John",
+                    last_name="Doe",
+                    dob="1990-01-01",
+                    sex="M",
+                    phone_number="1234567890",
+                    address="123 Street",
+                    city="City",
+                    zipcode="12345",
+                )
+            ]
+
+            # Simulate two matches above threshold
+            def sim_func(_, __):
+                return (0.8, {"dob": 1.0})
+
+            mock_calc_sim.side_effect = sim_func
+
+            matches = match_patients([p1, p2, p3], external)
+            self.assertEqual(len(matches), 3)
+            for match in matches:
+                self.assertEqual(match["score"], 0.8)
+                self.assertEqual(match["breakdown"], {"dob": 1.0})
+                self.assertIs(match["external"], external[0])
+                self.assertIn(match["internal"], [p1, p2, p3])
+
+    def test_match_patients_no_internal_patients(self):
+        """Test match_patients returns empty list if internal list is empty."""
+        with patch(
+            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
+            {"dob": "dob_norm"},
+        ), patch("app.matching.matcher.MATCH_THRESHOLD", 0.8), patch(
+            "app.matching.matcher.calculate_weighted_similarity"
+        ):
+            external = [
+                Patient(
+                    patient_id="1",
+                    first_name="John",
+                    last_name="Doe",
+                    dob="1990-01-01",
+                    sex="M",
+                    phone_number="1234567890",
+                    address="123 Street",
+                    city="City",
+                    zipcode="12345",
+                )
+            ]
+            matches = match_patients([], external)
+            self.assertEqual(matches, [])
+
+    def test_match_patients_no_external_patients(self):
+        """Test match_patients returns empty list if external list is empty."""
+        with patch(
+            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
+            {"dob": "dob_norm"},
+        ), patch("app.matching.matcher.MATCH_THRESHOLD", 0.8), patch(
+            "app.matching.matcher.calculate_weighted_similarity"
+        ):
+            internal = [
+                Patient(
+                    patient_id="2",
+                    first_name="Jane",
+                    last_name="Smith",
+                    dob="1990-01-01",
+                    sex="F",
+                    phone_number="9876543210",
+                    address="456 Avenue",
+                    city="Town",
+                    zipcode="67890",
+                )
+            ]
+            matches = match_patients(internal, [])
+            self.assertEqual(matches, [])
+
+    def test_match_patients_calls_normalize_precomputed_fields(self):
+        """Test that normalize_precomputed_fields is called for all patients."""
+        with patch(
+            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
+            {"dob": "dob_norm"},
+        ), patch("app.matching.matcher.MATCH_THRESHOLD", 0.8), patch(
+            "app.matching.matcher.calculate_weighted_similarity"
+        ) as mock_calc_sim:
+            p1 = DummyPatient(dob_norm="1990-01-01")
+            p2 = DummyPatient(dob_norm="1990-01-01")
+            mock_calc_sim.return_value = (0.9, {"dob": 1.0})
+
+            match_patients([p1], [p2])
+            self.assertTrue(p1.normalized)
+            self.assertTrue(p2.normalized)
+
 
 if __name__ == "__main__":
     unittest.main()

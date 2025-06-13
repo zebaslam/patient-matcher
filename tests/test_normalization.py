@@ -94,6 +94,16 @@ class TestNormalization(unittest.TestCase):
         self.assertEqual(normalize_string("", "address"), "")
         self.assertEqual(normalize_string("APT 5", "address"), "apt 5")
 
+    def test_normalize_address_directional_abbreviations(self):
+        """Test that directional words are correctly abbreviated in addresses."""
+        self.assertEqual(_normalize_address("123 North Main Street"), "123 n main st")
+        self.assertEqual(_normalize_address("456 South Elm Avenue"), "456 s elm ave")
+        self.assertEqual(_normalize_address("789 East Oak Boulevard"), "789 e oak blvd")
+        self.assertEqual(_normalize_address("101 West Pine Drive"), "101 w pine dr")
+        self.assertEqual(_normalize_address("202 north place"), "202 n pl")
+        self.assertEqual(_normalize_address("303 SOUTH court"), "303 s ct")
+        self.assertEqual(_normalize_address("404 east suite"), "404 e ste")
+
 
 if __name__ == "__main__":
     unittest.main()

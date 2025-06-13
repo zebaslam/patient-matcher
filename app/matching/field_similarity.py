@@ -64,7 +64,9 @@ def phone_similarity(phone1, phone2):
     """
     Compare phone numbers after normalization.
     """
-    match (_normalize_phone(phone1), _normalize_phone(phone2)):
+    pn1 = _normalize_phone(phone1)
+    pn2 = _normalize_phone(phone2)
+    match (pn1, pn2):
         case (pn1, pn2) if pn1 == pn2 or (pn1 == "" and pn2 == ""):
             return 1.0
         case (pn1, pn2) if pn1 == "" or pn2 == "" or pn1 in pn2 or pn2 in pn1:

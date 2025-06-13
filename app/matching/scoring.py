@@ -1,4 +1,8 @@
-"""Patient similarity scoring logic."""
+"""Patient similarity scoring logic.
+
+This module provides functions to calculate the weighted similarity score between two patient records.
+It uses configurable field weights and types, and supports penalizing missing data for critical fields.
+"""
 
 from typing import Tuple
 from app.models.patient import Patient
@@ -14,7 +18,17 @@ from .field_similarity import calculate_field_similarity
 def _get_normalized_precompute_values(
     patient1: Patient, patient2: Patient, field_name: str
 ):
-    """Return normalized values for a field, using normalized attributes if available."""
+    """
+    Return normalized values for a field, using normalized attributes if available.
+
+    Args:
+        patient1 (Patient): The first patient object.
+        patient2 (Patient): The second patient object.
+        field_name (str): The name of the field to normalize.
+
+    Returns:
+        Tuple[str, str]: The normalized values for the field from both patients.
+    """
     norm_field = NORMALIZED_FIELDS.get(field_name, f"{field_name}_norm")
     n1 = getattr(patient1, norm_field, "")
     n2 = getattr(patient2, norm_field, "")
@@ -22,6 +36,18 @@ def _get_normalized_precompute_values(
 
 
 def _update_breakdown_and_score(breakdown, field_name, sim, weight):
+    """
+    Update the breakdown dictionary and calculate the weighted score for a field.
+
+    Args:
+        breakdown (dict): The breakdown dictionary to update.
+        field_name (str): The name of the field.
+        sim (float): The similarity score for the field.
+        weight (float): The weight assigned to the field.
+
+    Returns:
+        float: The weighted score for the field.
+    """
     wscore = sim * weight
     breakdown[field_name] = {
         "similarity": sim,
@@ -36,6 +62,17 @@ def calculate_weighted_similarity(
 ) -> Tuple[float, dict]:
     """
     Calculate the weighted similarity score between two patient records.
+
+    This function computes a similarity score based on field weights and types,
+    penalizing missing data for critical fields, and returns a breakdown of the
+    similarity calculation.
+
+    Args:
+        patient1 (Patient): The first patient object.
+        patient2 (Patient): The second patient object.
+
+    Returns:
+        Tuple[float, dict]: The final similarity score and a breakdown dictionary.
     """
     # Ensure all normalized fields are present
     patient1.normalize_fields()

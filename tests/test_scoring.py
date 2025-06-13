@@ -152,6 +152,46 @@ class TestScoring(unittest.TestCase):
         self.assertEqual(breakdown["foo"]["weighted_score"], 0.0)
         self.assertEqual(wscore, 0.0)
 
+    def test_final_score_zero_weight(self):
+        """
+        Test that when FIELD_WEIGHTS is empty, the final score defaults to DEFAULT_SIMILARITY.
+        This ensures the scoring system has a fallback when no field weights are configured.
+        """
+
+        orig_field_weights = scoring.FIELD_WEIGHTS
+        scoring.FIELD_WEIGHTS = {}
+        p1 = DummyPatient()
+        p2 = DummyPatient()
+        score, _ = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertEqual(score, scoring.DEFAULT_SIMILARITY)
+        scoring.FIELD_WEIGHTS = orig_field_weights
+
+    def test_final_score_below_default(self):
+        """
+        Test that when calculated weighted score is below DEFAULT_SIMILARITY,
+        the final score is set to DEFAULT_SIMILARITY as a minimum threshold.
+        This ensures the scoring system maintains a baseline similarity score.
+        """
+        orig_field_weights = scoring.FIELD_WEIGHTS
+        orig_critical_fields = scoring.CRITICAL_FIELDS
+        scoring.FIELD_WEIGHTS = {"test_field": 1.0}
+        scoring.CRITICAL_FIELDS = set()
+
+        class P(DummyPatient):
+            """
+            Dummy subclass for testing with a custom normalized field.
+            """
+
+            test_field_norm = ""
+
+        p1 = P()
+        p2 = P()
+        score, _ = scoring.calculate_weighted_similarity(p1, p2)
+        # The expected score is 0.5, since both normalized values are empty and not critical, so sim=0.5
+        self.assertEqual(score, 0.5)
+        scoring.FIELD_WEIGHTS = orig_field_weights
+        scoring.CRITICAL_FIELDS = orig_critical_fields
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,6 @@
 import unittest
 from app.config import PHONE_PARTIAL_MATCH
+from app.matching.string_similarity import jaro_winkler_similarity
 from app.matching.field_similarity import (
     calculate_field_similarity,
     first_name_similarity,
@@ -90,6 +91,20 @@ class TestFieldSimilarity(unittest.TestCase):
         self.assertEqual(
             calculate_field_similarity("abc", "xyz", "exact", "OtherField"), 0.0
         )
+
+    def test_jaro_winkler_similarity(self):
+        """Test Jaro-Winkler similarity for last names and general cases."""
+
+        # Identical strings
+        self.assertEqual(jaro_winkler_similarity("Smith", "Smith"), 1.0)
+        # Similar strings
+        self.assertGreater(jaro_winkler_similarity("Smith", "Smyth"), 0.8)
+        # Dissimilar strings
+        self.assertLess(jaro_winkler_similarity("Smith", "Jones"), 0.5)
+        # Empty strings
+        self.assertEqual(jaro_winkler_similarity("", ""), 1.0)
+        self.assertEqual(jaro_winkler_similarity("Smith", ""), 0.0)
+        self.assertEqual(jaro_winkler_similarity("", "Smith"), 0.0)
 
 
 if __name__ == "__main__":

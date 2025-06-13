@@ -111,6 +111,17 @@ def _normalize_address(addr_str: str) -> str:
         abbrev = REPLACEMENTS_LOWER.get(m2.group(2).lower(), m2.group(2).lower())
         return f"{m2.group(1)} {abbrev}"
 
+    # Special case: if address is "<number> <directional> <suite-type>"
+    m3 = re.match(
+        r"^(\d+)\s+(north|south|east|west)\s+(suite|ste|apartment|apt|unit|#)$",
+        addr_str.strip(),
+        re.IGNORECASE,
+    )
+    if m3:
+        abbrev_dir = REPLACEMENTS_LOWER.get(m3.group(2).lower(), m3.group(2).lower())
+        abbrev_suite = REPLACEMENTS_LOWER.get(m3.group(3).lower(), m3.group(3).lower())
+        return f"{m3.group(1)} {abbrev_dir} {abbrev_suite}"
+
     # Use base address (strip apartment/unit/suite)
     normalized = extract_base_address(addr_str).lower().strip()
 
