@@ -115,17 +115,18 @@ class TestMatcher(unittest.TestCase):
         self.assertEqual(match_patients([DummyPatient(dob_norm="1990-01-01")], []), [])
         self.assertEqual(match_patients([], [DummyPatient(dob_norm="1990-01-01")]), [])
 
-    def test_match_patients_multiple_matches(self):
-        """Test match_patients returns multiple matches when appropriate."""
+    def test_match_patients_single_best_match(self):
+        """Test match_patients returns only the single best match per external patient."""
         with patch(
             "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
-            {"dob": "dob_norm"},
+            {"dob": "dob_norm", "sex": "sex_norm"},
         ), patch("app.matching.matcher.MATCH_THRESHOLD", 0.7), patch(
             "app.matching.matcher.calculate_weighted_similarity"
         ) as mock_calc_sim:
-            p1 = DummyPatient(dob_norm="1990-01-01")
-            p2 = DummyPatient(dob_norm="1990-01-01")
-            p3 = DummyPatient(dob_norm="1990-01-01")
+            # Use lowercased 'm' to match normalization of external patient
+            p1 = DummyPatient(dob_norm="1990-01-01", sex_norm="m")
+            p2 = DummyPatient(dob_norm="1990-01-01", sex_norm="m")
+            p3 = DummyPatient(dob_norm="1990-01-01", sex_norm="m")
             external = [
                 Patient(
                     patient_id="1",
@@ -140,19 +141,24 @@ class TestMatcher(unittest.TestCase):
                 )
             ]
 
-            # Simulate two matches above threshold
-            def sim_func(_, __):
-                return (0.8, {"dob": 1.0})
+            # Simulate different similarity scores for each internal patient
+            def sim_func(_, internal):
+                if internal is p1:
+                    return (0.8, {"dob": 1.0})
+                if internal is p2:
+                    return (0.85, {"dob": 1.0})  # best match
+                if internal is p3:
+                    return (0.7, {"dob": 1.0})
 
             mock_calc_sim.side_effect = sim_func
 
             matches = match_patients([p1, p2, p3], external)
-            self.assertEqual(len(matches), 3)
-            for match in matches:
-                self.assertEqual(match["score"], 0.8)
-                self.assertEqual(match["breakdown"], {"dob": 1.0})
-                self.assertIs(match["external"], external[0])
-                self.assertIn(match["internal"], [p1, p2, p3])
+            self.assertEqual(len(matches), 1)
+            match = matches[0]
+            self.assertEqual(match["score"], 0.85)
+            self.assertEqual(match["breakdown"], {"dob": 1.0})
+            self.assertIs(match["external"], external[0])
+            self.assertIs(match["internal"], p2)
 
     def test_match_patients_no_internal_patients(self):
         """Test match_patients returns empty list if internal list is empty."""

@@ -1,0 +1,55 @@
+Matching Algorithm Description
+=============================
+
+This matching algorithm uses a hybrid approach that combines normalization, efficient filtering, and custom string similarity scoring. 
+The goal is to identify probable internal patient records corresponding to external patient entries.
+
+Preprocessing
+-------------
+
+- All fields are normalized:
+  - Lowercased
+  - Stripped of punctuation, whitespace, and special characters
+  - Dates are standardized to YYYY-MM-DD
+  - Phone numbers are reduced to digits only
+  - Addresses remove suite/apartment/unit to simplify 
+- To reduce unnecessary computation, we filter internal candidates based on:
+  - Matching Date of Birth (exact match)
+  - Matching Sex (exact match)
+  Candidates failing either of these are excluded before further comparison.
+
+Fields Used and Similarity Algorithms
+-------------------------------------
+
+Each field contributes a weighted similarity score. The algorithm used for each is chosen based on the field's characteristics:
+
+  Field         | Weight | Algorithm                             | Justification
+  --------------|--------|---------------------------------------|-------------------------------------------------------------
+  Date of Birth | 0.30   | Exact                                 | High confidence identifier; typos unlikely and unacceptable
+  Last Name     | 0.15   | Jaro-Winkler                          | Tolerant of minor typos and transpositions; good for names
+  First Name    | 0.15   | Custom: first_name_similarity         | Custom logic accounts for common nicknames and abbreviations
+  Address       | 0.15   | Combined Jaccard + Levenshtein        | Captures structural and token similarity for complex strings
+  Zip Code      | 0.10   | General similarity (Levenshtein)      | Small errors may occur; lenient edit-distance match helps
+  Phone Number  | 0.05   | Custom: phone_similarity              | Accounts for missing area codes and minor digit issues
+  City          | 0.05   | General similarity (Levenshtein)      | Simple field; typographical tolerance is sufficient
+  Sex           | 0.05   | Exact                                 | Binary categorical; should match exactly
+
+The total similarity score is computed as the weighted average of all individual field scores.
+
+Match Selection
+---------------
+
+For each external patient:
+- Each internal patient is compared using only critical fields: DOB and Sex
+- If critical normalized fields match, the pair is considered a candidate
+- The similarity score is calculated for each candidate using the weighted similarity function above
+- The best-scoring internal patient is selected if their score exceeds a defined threshold (e.g., 0.75)
+- If no match passes the threshold, the external patient is excluded from the match results
+
+Assumptions
+-----------
+
+- No shared unique IDs exist between datasets
+- DOB and sex are treated as reliable identifiers and used for filtering
+- Names, addresses, and phone numbers may contain typos, abbreviations, or formatting inconsistencies
+- The matching process favors precision over recall, optimizing to minimize false positives

@@ -29,7 +29,7 @@
       "phone_number": "general",
       "address": "general",
       "city": "general",
-      "zipcode": "exact"
+      "zipcode": "general"
     },
     "MATCH_THRESHOLD": 0.70,
     "SIMILARITY_THRESHOLDS": {
