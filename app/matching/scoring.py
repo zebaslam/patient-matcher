@@ -47,17 +47,15 @@ def calculate_weighted_similarity(
 
     for field_name, weight in FIELD_WEIGHTS.items():
         n1, n2 = _get_normalized_precompute_values(patient1, patient2, field_name)
-        if not n1 or not n2:
-            continue
-
-        sim = calculate_field_similarity(
-            n1, n2, FIELD_TYPES.get(field_name, "general"), field_name
-        )
-        if field_name in CRITICAL_FIELDS and sim <= 0.55:
-            return DEFAULT_SIMILARITY, {
-                "early_exit": f"{field_name} too dissimilar",
-                "fields": breakdown,
-            }
+        # Penalize missing data for critical fields
+        if (not n1 or not n2) and field_name in CRITICAL_FIELDS:
+            sim = 0.0
+        elif not n1 or not n2:
+            sim = 0.5
+        else:
+            sim = calculate_field_similarity(
+                n1, n2, FIELD_TYPES.get(field_name, "general"), field_name
+            )
 
         wscore = _update_breakdown_and_score(breakdown, field_name, sim, weight)
         total_weighted_score += wscore

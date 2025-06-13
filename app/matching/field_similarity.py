@@ -55,12 +55,16 @@ def calculate_field_similarity(first_field, second_field, field_type, field_name
 
 def first_name_similarity(name1, name2):
     """
-    Compute similarity between two first names, accounting for typos and middle names.
+    Compute similarity between two first names, accounting for typos, middle names, nicknames, and prefix/full containment.
     """
     n1 = name1.strip().lower()
     n2 = name2.strip().lower()
     if n1 == n2:
         return 1.0
+
+    # Prefix or full containment (e.g., "rod" in "rodney", "alex" in "alexander")
+    if n1 and n2 and (n1.startswith(n2) or n2.startswith(n1)):
+        return FIRST_NAME_MATCH
 
     t1 = n1.split()
     t2 = n2.split()
@@ -77,7 +81,7 @@ def first_name_similarity(name1, name2):
 
     # Always fallback to Jaro-Winkler for typo tolerance
     sim = jaro_winkler_similarity(n1, n2)
-    return sim if sim >= FIRST_NAME_MATCH else 0.0
+    return sim if sim >= 0.7 else 0.0
 
 
 def last_name_similarity(name1, name2):

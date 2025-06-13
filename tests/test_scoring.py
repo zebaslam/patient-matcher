@@ -112,9 +112,8 @@ class TestScoring(unittest.TestCase):
         mock_sim.return_value = 0.0
         p1 = DummyPatient(first_name_norm="A", last_name_norm="B", dob_norm="C")
         p2 = DummyPatient(first_name_norm="X", last_name_norm="Y", dob_norm="Z")
-        score, details = scoring.calculate_weighted_similarity(p1, p2)
+        score, _ = scoring.calculate_weighted_similarity(p1, p2)
         self.assertEqual(score, 0.0)
-        self.assertIn("early_exit", details)
 
     @patch("app.matching.scoring.calculate_field_similarity")
     def test_missing_fields_in_one_patient(self, mock_sim):
@@ -123,7 +122,7 @@ class TestScoring(unittest.TestCase):
         """
         mock_sim.return_value = 1.0
         p1 = DummyPatient(
-            first_name_norm="John", last_name_norm=None, dob_norm="1990-01-01"
+            first_name_norm="John", last_name_norm="", dob_norm="1990-01-01"
         )
         p2 = DummyPatient(
             first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-01"
@@ -131,7 +130,8 @@ class TestScoring(unittest.TestCase):
         _, details = scoring.calculate_weighted_similarity(p1, p2)
         self.assertIn("first_name", details["fields"])
         self.assertIn("dob", details["fields"])
-        self.assertNotIn("last_name", details["fields"])
+        self.assertIn("last_name", details["fields"])
+        self.assertEqual(details["fields"]["last_name"]["similarity"], 0.5)
 
     def test__get_normalized_precompute_values_missing_norm(self):
         """

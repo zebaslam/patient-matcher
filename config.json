@@ -34,19 +34,12 @@
     "MATCH_THRESHOLD": 0.70,
     "SIMILARITY_THRESHOLDS": {
       "FIRST_NAME_MIDDLE_NAME": 0.95,
-      "FIRST_NAME_MATCH": 0.70,
+      "FIRST_NAME_MATCH": 0.85,
       "ADDRESS_BASE_MATCH": 1.0,
       "PHONE_PARTIAL_MATCH": 0.9,
       "PHONE_AREA_CODE_MATCH": 0.2,
       "GENERAL_SIMILARITY_MULTIPLIER": 0.7,
       "ADDRESS_SIMILARITY_MULTIPLIER": 0.8
-    },
-    "PENALTIES": {
-      "dob": 0.1,
-      "last_name": 0.05,
-      "first_name": 0.05,
-      "phone_number": 0.1,
-      "sex": 0.4
     }
   }
 }
