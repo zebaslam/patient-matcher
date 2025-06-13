@@ -1,27 +1,30 @@
-{% for field in patient_fields %}
-  {% set value = patient | attribute(field) %}
-  {% set norm_field = field ~ '_norm' %}
-  {% set ext_norm = external | attribute(norm_field, None) %}
-  {% set int_norm = internal | attribute(norm_field, None) %}
-  <div class="row mb-1">
-    <div class="d-flex w-100 align-items-center
-      {% if ext_norm and int_norm and ext_norm != int_norm %}
-        bg-warning-subtle border-start border-4 border-warning rounded-2 px-2 py-1
-      {% endif %}
-    ">
-      <div class="col-4 fw-semibold">{{ field | camel_to_title }}:</div>
-      <div class="col-8">
-        <span
-          {% if ext_norm and int_norm and ext_norm != int_norm %}
-            data-bs-toggle="tooltip" title="Normalized value differs!"
-          {% endif %}
-        >
-          {{ value }}
-          {% if ext_norm and int_norm and ext_norm != int_norm %}
-            <i class="bi bi-exclamation-triangle-fill text-warning ms-1"></i>
-          {% endif %}
-        </span>
-      </div>
+{% for field in patient_fields %} {% set value = patient | attribute(field) %}
+{% set norm_field = field ~ '_norm' %} {% set ext_norm = external |
+attribute(norm_field, None) %} {% set int_norm = internal |
+attribute(norm_field, None) %}
+<div class="row mb-1">
+  <div
+    class="d-flex w-100 align-items-center {% if ext_norm != int_norm %} bg-warning-subtle border-start border-4 border-warning rounded-2 px-2 py-1 {% endif %}"
+  >
+    <div class="col-4 fw-semibold">{{ field | camel_to_title }}:</div>
+    <div class="col-8">
+      <span
+        {%
+        if
+        ext_norm
+        !="int_norm"
+        %}
+        data-bs-toggle="tooltip"
+        title="Normalized value differs!"
+        {%
+        endif
+        %}
+      >
+        {{ value }} {% if ext_norm != int_norm %}
+        <i class="bi bi-exclamation-triangle-fill text-warning ms-1"></i>
+        {% endif %}
+      </span>
     </div>
   </div>
+</div>
 {% endfor %}
