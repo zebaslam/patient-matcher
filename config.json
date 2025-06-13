@@ -26,7 +26,7 @@
       "sex": "exact",
       "last_name": "name",
       "first_name": "name",
-      "phone_number": "exact",
+      "phone_number": "general",
       "address": "general",
       "city": "general",
       "zipcode": "exact"
