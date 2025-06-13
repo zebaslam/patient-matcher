@@ -9,8 +9,8 @@ from app.config import (
     GENERAL_SIMILARITY_MULTIPLIER,
 )
 from .string_similarity import (
-    compute_levenshtein_similarity,
-    compute_jaccard_similarity,
+    levenshtein_similarity,
+    jaccard_similarity,
     jaro_winkler_similarity,
     combined_jaccard_levenshtein_similarity,
 )
@@ -36,11 +36,11 @@ def calculate_field_similarity(first_field, second_field, field_type, field_name
         case ("phone_number", _) | ("phone", _):
             return phone_similarity(norm1, norm2)
         case ("address", _):
-            return address_similarity(norm1, norm2)
+            return combined_jaccard_levenshtein_similarity(norm1, norm2)
         case ("first_name", _):
             return first_name_similarity(norm1, norm2)
         case ("last_name", _):
-            return last_name_similarity(norm1, norm2)
+            return jaro_winkler_similarity(norm1, norm2)
         case _:
             return general_similarity(norm1, norm2)
 
@@ -60,13 +60,6 @@ def first_name_similarity(name1, name2):
             return jaro_winkler_similarity(n1, n2)
 
 
-def last_name_similarity(name1, name2):
-    """
-    Compare last names using Jaro-Winkler similarity.
-    """
-    return jaro_winkler_similarity(name1, name2)
-
-
 def phone_similarity(phone1, phone2):
     """
     Compare phone numbers after normalization.
@@ -77,15 +70,8 @@ def phone_similarity(phone1, phone2):
         case (pn1, pn2) if pn1 == "" or pn2 == "" or pn1 in pn2 or pn2 in pn1:
             return PHONE_PARTIAL_MATCH
         case _:
-            sim = compute_levenshtein_similarity(pn1, pn2)
+            sim = levenshtein_similarity(pn1, pn2)
             return sim if sim >= 0.5 else 0.0
-
-
-def address_similarity(addr1, addr2):
-    """
-    Compare addresses using hybrid Jaccard-Levenshtein similarity.
-    """
-    return combined_jaccard_levenshtein_similarity(addr1, addr2)
 
 
 def general_similarity(norm1, norm2):
@@ -93,9 +79,9 @@ def general_similarity(norm1, norm2):
     General similarity for normalized strings.
     """
     if " " in norm1 or " " in norm2:
-        token_score = compute_jaccard_similarity(norm1, norm2)
+        token_score = jaccard_similarity(norm1, norm2)
         similarity_score = (
-            compute_levenshtein_similarity(norm1, norm2) * GENERAL_SIMILARITY_MULTIPLIER
+            levenshtein_similarity(norm1, norm2) * GENERAL_SIMILARITY_MULTIPLIER
         )
         return max(token_score, similarity_score)
-    return compute_levenshtein_similarity(norm1, norm2)
+    return levenshtein_similarity(norm1, norm2)

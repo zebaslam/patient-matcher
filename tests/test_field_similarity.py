@@ -3,9 +3,7 @@ from app.config import PHONE_PARTIAL_MATCH
 from app.matching.field_similarity import (
     calculate_field_similarity,
     first_name_similarity,
-    last_name_similarity,
     phone_similarity,
-    address_similarity,
     general_similarity,
 )
 
@@ -21,9 +19,15 @@ class TestFieldSimilarity(unittest.TestCase):
 
     def test_last_name_similarity(self):
         """Test similarity between last names."""
-        self.assertEqual(last_name_similarity("Smith", "Smith"), 1.0)
-        self.assertGreater(last_name_similarity("Smith", "Smyth"), 0.8)
-        self.assertEqual(last_name_similarity("Smith", "Jones"), 0.0)
+        self.assertEqual(
+            calculate_field_similarity("Smith", "Smith", "name", "last_name"), 1.0
+        )
+        self.assertGreater(
+            calculate_field_similarity("Smith", "Smyth", "name", "last_name"), 0.8
+        )
+        self.assertEqual(
+            calculate_field_similarity("Smith", "Jones", "name", "last_name"), 0.0
+        )
 
     def test_phone_similarity(self):
         """Test similarity between phone numbers."""
@@ -37,11 +41,27 @@ class TestFieldSimilarity(unittest.TestCase):
 
     def test_address_similarity(self):
         """Test similarity between addresses."""
-        self.assertEqual(address_similarity("123 Main St", "123 Main St"), 1.0)
-        self.assertGreater(address_similarity("123 Main St", "123 Main"), 0.0)
-        self.assertGreater(address_similarity("123 Main St", "456 Main St"), 0.0)
-        self.assertLess(address_similarity("123 Main St", "456 Elm St"), 0.5)
-        self.assertLess(address_similarity("582 Grape Port", "713 Grant Port"), 0.5)
+        self.assertEqual(
+            calculate_field_similarity("123 Main St", "123 Main St", "any", "address"),
+            1.0,
+        )
+        self.assertGreater(
+            calculate_field_similarity("123 Main St", "123 Main", "any", "address"), 0.0
+        )
+        self.assertGreater(
+            calculate_field_similarity("123 Main St", "456 Main St", "any", "address"),
+            0.0,
+        )
+        self.assertLess(
+            calculate_field_similarity("123 Main St", "456 Elm St", "any", "address"),
+            0.5,
+        )
+        self.assertLess(
+            calculate_field_similarity(
+                "582 Grape Port", "713 Grant Port", "any", "address"
+            ),
+            0.5,
+        )
 
     def test_general_similarity(self):
         """Test general similarity between normalized strings."""
