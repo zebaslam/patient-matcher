@@ -275,8 +275,47 @@ class SimilarityMetrics:
 
         return jaro_score + (common_prefix_length * prefix_weight * (1 - jaro_score))
 
+    @classmethod
+    def combined_jaccard_levenshtein_similarity(
+        cls, s1: str, s2: str, token_sim_threshold: float = 0.8
+    ) -> float:
+        """
+        Combine Jaccard and Levenshtein similarity for robust address matching.
 
-# Convenience functions for backward compatibility and ease of use
+        Args:
+            s1: First address string
+            s2: Second address string
+            token_sim_threshold: Minimum normalized similarity for tokens to be considered a match
+
+        Returns:
+            Float between 0.0 and 1.0 representing hybrid similarity
+        """
+        s1, s2 = cls._validate_strings(s1, s2)
+        tokens1 = list(cls._tokenize(s1))
+        tokens2 = list(cls._tokenize(s2))
+
+        if not tokens1 and not tokens2:
+            return 1.0
+        if not tokens1 or not tokens2:
+            return 0.0
+
+        matched_indices = set()
+        match_count = 0
+
+        for t1 in tokens1:
+            similarities = [
+                (j, cls.normalized_similarity(t1, t2))
+                for j, t2 in enumerate(tokens2)
+                if j not in matched_indices
+            ]
+            if similarities:
+                best_j, best_sim = max(similarities, key=lambda x: x[1])
+                if best_sim >= token_sim_threshold:
+                    match_count += 1
+                    matched_indices.add(best_j)
+
+        union = len(tokens1) + len(tokens2) - match_count
+        return match_count / union if union > 0 else 1.0
 
 
 def similarity_ratio(s1: str, s2: str) -> float:
@@ -289,11 +328,15 @@ def token_overlap_score(s1: str, s2: str) -> float:
     return SimilarityMetrics.jaccard_similarity(s1, s2)
 
 
-def jaro_similarity(s1: str, s2: str) -> float:
-    """Calculate Jaro similarity between two strings."""
-    return SimilarityMetrics.jaro_similarity(s1, s2)
-
-
 def jaro_winkler_similarity(s1: str, s2: str, prefix_scale: float = 0.1) -> float:
     """Calculate Jaro-Winkler similarity between two strings."""
     return SimilarityMetrics.jaro_winkler_similarity(s1, s2, prefix_scale)
+
+
+def combined_jaccard_levenshtein_similarity(
+    s1: str, s2: str, token_sim_threshold: float = 0.8
+) -> float:
+    """Hybrid Jaccard-Levenshtein similarity for address matching."""
+    return SimilarityMetrics.combined_jaccard_levenshtein_similarity(
+        s1, s2, token_sim_threshold
+    )

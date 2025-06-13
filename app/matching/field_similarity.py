@@ -14,6 +14,7 @@ from .string_similarity import (
     similarity_ratio,
     token_overlap_score,
     jaro_winkler_similarity,
+    combined_jaccard_levenshtein_similarity,
 )
 from .normalization import _normalize_phone, normalize_string
 
@@ -43,9 +44,9 @@ def calculate_field_similarity(first_field, second_field, field_type, field_name
             return phone_similarity(norm1, norm2)
         case ("address", _):
             return address_similarity(norm1, norm2)
-        case ("first_name", "name"):
+        case ("first_name", _):
             return first_name_similarity(norm1, norm2)
-        case ("last_name", "name"):
+        case ("last_name", _):
             return last_name_similarity(norm1, norm2)
         case (_, "exact"):
             return 1.0 if norm1 == norm2 else 0.0
@@ -95,7 +96,6 @@ def last_name_similarity(name1, name2):
     Returns:
         float: Similarity score between 0.0 and 1.0.
     """
-    # similarity = jaro_winkler_similarity(name1, name2)
     return jaro_winkler_similarity(name1, name2)
 
 
@@ -123,7 +123,7 @@ def phone_similarity(phone1, phone2):
 
 def address_similarity(addr1, addr2):
     """
-    Compute similarity between two addresses.
+    Compute similarity between two addresses using hybrid Jaccard-Levenshtein.
 
     Args:
         addr1 (str): The first address.
@@ -132,38 +132,7 @@ def address_similarity(addr1, addr2):
     Returns:
         float: Similarity score between 0.0 and 1.0.
     """
-    if addr1 == addr2:
-        return 1.0
-    num1, street1 = parse_address(addr1)
-    num2, street2 = parse_address(addr2)
-    if num1 and num2 and num1 == num2 and street1 == street2:
-        return 1.0
-    elif street1 == street2:
-        return 0.7
-    elif num1 == num2:
-        return 0.5
-    # Fix: If both street and number do not match, return 0.0
-    return 0.0
-
-
-def parse_address(address):
-    """
-    Parse an address string into street number and street name components.
-
-    Args:
-        address (str): The address string.
-
-    Returns:
-        tuple: (street_number (str), street_name (str))
-    """
-    tokens = address.split()
-    street_number = tokens[0] if tokens and tokens[0].isdigit() else ""
-    street_name = (
-        " ".join(tokens[1:3]).lower()
-        if len(tokens) > 2
-        else " ".join(tokens[1:]).lower()
-    )
-    return street_number, street_name
+    return combined_jaccard_levenshtein_similarity(addr1, addr2)
 
 
 def general_similarity(norm1, norm2):

@@ -6,7 +6,6 @@ from app.matching.field_similarity import (
     last_name_similarity,
     phone_similarity,
     address_similarity,
-    parse_address,
     general_similarity,
 )
 
@@ -41,13 +40,8 @@ class TestFieldSimilarity(unittest.TestCase):
         self.assertEqual(address_similarity("123 Main St", "123 Main St"), 1.0)
         self.assertGreater(address_similarity("123 Main St", "123 Main"), 0.0)
         self.assertGreater(address_similarity("123 Main St", "456 Main St"), 0.0)
-        self.assertEqual(address_similarity("123 Main St", "456 Elm St"), 0.0)
-
-    def test_parse_address(self):
-        """Test parsing of address into number and street."""
-        self.assertEqual(parse_address("123 Main St"), ("123", "main st"))
-        self.assertEqual(parse_address("Main St"), ("", "st"))
-        self.assertEqual(parse_address("456 Elm"), ("456", "elm"))
+        self.assertLess(address_similarity("123 Main St", "456 Elm St"), 0.5)
+        self.assertLess(address_similarity("582 Grape Port", "713 Grant Port"), 0.5)
 
     def test_general_similarity(self):
         """Test general similarity between normalized strings."""

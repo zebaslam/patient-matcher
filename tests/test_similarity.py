@@ -1,5 +1,9 @@
 import unittest
 from app.matching import string_similarity
+from app.matching import normalization
+
+# Disable protected member access warnings for test methods
+# pylint: disable=protected-access
 
 
 class TestSimilarityMetrics(unittest.TestCase):
@@ -27,22 +31,6 @@ class TestSimilarityMetrics(unittest.TestCase):
         self.assertEqual(string_similarity.token_overlap_score("a b c", ""), 0.0)
         self.assertEqual(string_similarity.token_overlap_score("", "a b c"), 0.0)
 
-    def test_jaro_similarity(self):
-        """Test Jaro similarity calculation."""
-        self.assertAlmostEqual(
-            string_similarity.jaro_similarity("MARTHA", "MARHTA"), 0.944, places=3
-        )
-        self.assertAlmostEqual(
-            string_similarity.jaro_similarity("DWAYNE", "DUANE"), 0.822, places=3
-        )
-        self.assertAlmostEqual(
-            string_similarity.jaro_similarity("ALAN", "ALLEN"), 0.783, places=3
-        )
-        self.assertEqual(string_similarity.jaro_similarity("", ""), 1.0)
-        self.assertEqual(string_similarity.jaro_similarity("abc", ""), 0.0)
-        self.assertEqual(string_similarity.jaro_similarity("", "abc"), 0.0)
-        self.assertEqual(string_similarity.jaro_similarity("abc", "abc"), 1.0)
-
     def test_jaro_winkler_similarity(self):
         """Test Jaro-Winkler similarity calculation."""
         self.assertAlmostEqual(
@@ -60,6 +48,33 @@ class TestSimilarityMetrics(unittest.TestCase):
         self.assertEqual(string_similarity.jaro_winkler_similarity("abc", ""), 0.0)
         self.assertEqual(string_similarity.jaro_winkler_similarity("", "abc"), 0.0)
         self.assertEqual(string_similarity.jaro_winkler_similarity("abc", "abc"), 1.0)
+
+    def test_combined_jaccard_levenshtein_similarity(self):
+        """Test hybrid Jaccard-Levenshtein similarity for address matching."""
+        sim = string_similarity.combined_jaccard_levenshtein_similarity
+
+        # Identical addresses
+        self.assertEqual(sim("123 Main St", "123 Main St"), 1.0)
+
+        # Completely different
+        self.assertEqual(sim("123 Main St", "456 Elm Ave"), 0.0)
+
+        # Empty strings
+        self.assertEqual(sim("", ""), 1.0)
+        self.assertEqual(sim("abc", ""), 0.0)
+        self.assertEqual(sim("", "abc"), 0.0)
+
+        # Abbreviation vs full (lower threshold to allow "St" ~ "Street")
+        h1 = normalization._normalize_address("123 Main St")
+        h2 = normalization._normalize_address("123 Main Street")
+        h3 = normalization._normalize_address("123 Main Street Apt 4")
+        self.assertGreater(
+            sim(h1, h2, token_sim_threshold=0.5),
+            0.5,
+        )
+
+        # Extra tokens
+        self.assertGreater(sim(h2, h3, token_sim_threshold=0.5), 0.5)
 
 
 if __name__ == "__main__":
