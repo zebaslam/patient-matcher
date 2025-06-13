@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch
-from main import app
+from main import PATIENT_FIELDS, app
 
 
 class TestMain(unittest.TestCase):
@@ -35,7 +35,10 @@ class TestMain(unittest.TestCase):
         mock_render_template.return_value = "no data"
         response = self.client.get("/")
         mock_render_template.assert_called_with(
-            "index.html", matches=[], error="No data found"
+            "index.html",
+            matches=[],
+            error="No data found",
+            patient_fields=PATIENT_FIELDS,
         )
         self.assertEqual(response.data, b"no data")
 
@@ -65,19 +68,7 @@ class TestMain(unittest.TestCase):
         response = self.client.get("/")
         sorted_matches = sorted(matches, key=lambda m: m["score"])
         mock_render_template.assert_called_with(
-            "index.html",
-            matches=sorted_matches,
-            patient_fields=[
-                "patient_id",
-                "first_name",
-                "last_name",
-                "dob",
-                "sex",
-                "phone_number",
-                "address",
-                "city",
-                "zipcode",
-            ],
+            "index.html", matches=sorted_matches, patient_fields=PATIENT_FIELDS
         )
         mock_write_all_matches.assert_called_with(sorted_matches)
         self.assertEqual(response.data, b"matches rendered")

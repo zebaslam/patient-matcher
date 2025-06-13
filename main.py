@@ -1,4 +1,6 @@
 import logging
+import webbrowser
+import threading
 from flask import Flask, render_template, request, jsonify
 from app.matching.matcher import match_patients
 from app.io.csv_io import load_data, write_match, create_output_files, write_all_matches
@@ -33,9 +35,16 @@ def create_app() -> Flask:
         try:
             internal, external = load_data()
             if not internal or not external:
-                return render_template("index.html", matches=[], error="No data found")
+                return render_template(
+                    "index.html",
+                    matches=[],
+                    error="No data found",
+                    patient_fields=PATIENT_FIELDS,
+                )
             matches = sorted(
-                match_patients(internal, external), key=lambda m: m["score"]
+                match_patients(internal, external),
+                key=lambda m: m["score"],
+                reverse=False,
             )
             write_all_matches(matches)
             return render_template(
@@ -51,12 +60,22 @@ def create_app() -> Flask:
         ext_id = data.get("external_id")
         int_id = data.get("internal_id")
         success = write_match(ext_id, int_id)
-        return jsonify(success=success), 200 if success else 400
+        return jsonify(success=success), (200 if success else 400)
 
     return flask_app
 
 
 app = create_app()
 
+
+def open_browser():
+    """Open the default web browser to the application's home page."""
+    webbrowser.open(f"http://127.0.0.1:{PORT}/")
+
+
 if __name__ == "__main__":
+    import os
+
+    if os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        threading.Timer(1.0, open_browser).start()
     app.run(debug=DEBUG, port=PORT)
