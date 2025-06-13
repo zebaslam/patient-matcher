@@ -13,13 +13,13 @@
   "MATCHING": {
     "FIELD_WEIGHTS": {
       "dob": 0.3,
-      "last_name": 0.1,
-      "first_name": 0.2,
+      "last_name": 0.15,
+      "first_name": 0.15,
       "phone_number": 0.05,
       "sex": 0.05,
       "address": 0.15,
-      "city": 0.005,
-      "zipcode": 0.02
+      "city": 0.05,
+      "zipcode": 0.1
     },
     "FIELD_TYPES": {
       "dob": "exact",
