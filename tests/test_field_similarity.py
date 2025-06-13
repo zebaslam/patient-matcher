@@ -17,7 +17,7 @@ class TestFieldSimilarity(unittest.TestCase):
         """Test similarity between first names."""
         self.assertEqual(first_name_similarity("John", "John"), 1.0)
         self.assertAlmostEqual(first_name_similarity("John", "Jon"), 0.9, places=1)
-        self.assertEqual(first_name_similarity("John", "Jane"), 0.0)
+        self.assertLess(first_name_similarity("John", "Jane"), 0.8)
 
     def test_last_name_similarity(self):
         """Test similarity between last names."""

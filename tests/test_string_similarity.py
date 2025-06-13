@@ -6,30 +6,37 @@ from app.matching import normalization
 # pylint: disable=protected-access
 
 
-class TestSimilarityMetrics(unittest.TestCase):
+class TestStringSimilarityMetrics(unittest.TestCase):
     """Unit tests for string similarity functions."""
 
     def test_normalized_similarity(self):
         """Test normalized similarity ratio calculation."""
         self.assertAlmostEqual(
-            string_similarity.similarity_ratio("kitten", "sitting"), 1 - 3 / 7
+            string_similarity.compute_levenshtein_similarity("kitten", "sitting"),
+            1 - 3 / 7,
         )
-        self.assertEqual(string_similarity.similarity_ratio("", ""), 1.0)
-        self.assertEqual(string_similarity.similarity_ratio("abc", ""), 0.0)
-        self.assertEqual(string_similarity.similarity_ratio("", "abc"), 0.0)
-        self.assertEqual(string_similarity.similarity_ratio("abc", "abc"), 1.0)
+        self.assertEqual(string_similarity.compute_levenshtein_similarity("", ""), 1.0)
+        self.assertEqual(
+            string_similarity.compute_levenshtein_similarity("abc", ""), 0.0
+        )
+        self.assertEqual(
+            string_similarity.compute_levenshtein_similarity("", "abc"), 0.0
+        )
+        self.assertEqual(
+            string_similarity.compute_levenshtein_similarity("abc", "abc"), 1.0
+        )
 
     def test_jaccard_similarity(self):
         """Test Jaccard (token overlap) similarity calculation."""
         self.assertEqual(
-            string_similarity.token_overlap_score("the cat", "the cat"), 1.0
+            string_similarity.compute_jaccard_similarity("the cat", "the cat"), 1.0
         )
         self.assertEqual(
-            string_similarity.token_overlap_score("the cat", "the dog"), 1 / 3
+            string_similarity.compute_jaccard_similarity("the cat", "the dog"), 1 / 3
         )
-        self.assertEqual(string_similarity.token_overlap_score("", ""), 1.0)
-        self.assertEqual(string_similarity.token_overlap_score("a b c", ""), 0.0)
-        self.assertEqual(string_similarity.token_overlap_score("", "a b c"), 0.0)
+        self.assertEqual(string_similarity.compute_jaccard_similarity("", ""), 1.0)
+        self.assertEqual(string_similarity.compute_jaccard_similarity("a b c", ""), 0.0)
+        self.assertEqual(string_similarity.compute_jaccard_similarity("", "a b c"), 0.0)
 
     def test_jaro_winkler_similarity(self):
         """Test Jaro-Winkler similarity calculation."""

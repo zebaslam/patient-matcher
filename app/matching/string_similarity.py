@@ -7,37 +7,34 @@ record linkage and patient matching applications.
 from typing import Set, Tuple
 
 
+def validate_strings(s1: str, s2: str) -> Tuple[str, str]:
+    """Validate and normalize input strings."""
+    if not isinstance(s1, str) or not isinstance(s2, str):
+        raise TypeError("Both inputs must be strings")
+    return s1.strip(), s2.strip()
+
+
 class SimilarityMetrics:
     """Collection of string similarity algorithms for patient matching."""
-
-    @staticmethod
-    def _validate_strings(s1: str, s2: str) -> Tuple[str, str]:
-        """Validate and normalize input strings."""
-        if not isinstance(s1, str) or not isinstance(s2, str):
-            raise TypeError("Both inputs must be strings")
-        return s1.strip(), s2.strip()
 
     @staticmethod
     def _tokenize(text: str) -> Set[str]:
         """Split text into normalized tokens."""
         return set(text.lower().split())
 
-    @classmethod
-    def levenshtein_distance(cls, s1: str, s2: str) -> int:
-        """Calculate minimum edit distance between two strings.
-
-        Uses dynamic programming to find the minimum number of single-character
-        edits (insertions, deletions, substitutions) required to transform s1 into s2.
+    @staticmethod
+    def levenshtein_distance(s1: str, s2: str) -> int:
+        """
+        Calculate the minimum edit distance (Levenshtein distance) between two strings.
 
         Args:
-            s1: First string
-            s2: Second string
+            s1: First string.
+            s2: Second string.
 
         Returns:
-            Non-negative integer representing edit distance
+            Non-negative integer representing edit distance.
         """
-        s1, s2 = cls._validate_strings(s1, s2)
-
+        # Handle empty strings
         if not s1:
             return len(s2)
         if not s2:
@@ -47,27 +44,21 @@ class SimilarityMetrics:
         if len(s1) > len(s2):
             s1, s2 = s2, s1
 
-        # Use single row optimization
         previous_row = list(range(len(s2) + 1))
 
-        for i, char1 in enumerate(s1):
+        for i, c1 in enumerate(s1):
             current_row = [i + 1]
-
-            for j, char2 in enumerate(s2):
-                insertion_cost = previous_row[j + 1] + 1
-                deletion_cost = current_row[j] + 1
-                substitution_cost = previous_row[j] + (char1 != char2)
-
-                current_row.append(
-                    min(insertion_cost, deletion_cost, substitution_cost)
-                )
-
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
             previous_row = current_row
 
         return previous_row[-1]
 
     @classmethod
-    def normalized_similarity(cls, s1: str, s2: str) -> float:
+    def normalized_levenshtein_similarity(cls, s1: str, s2: str) -> float:
         """Calculate normalized similarity ratio based on edit distance.
 
         Returns a value between 0.0 (completely different) and 1.0 (identical).
@@ -79,7 +70,7 @@ class SimilarityMetrics:
         Returns:
             Float between 0.0 and 1.0 representing similarity ratio
         """
-        s1, s2 = cls._validate_strings(s1, s2)
+        s1, s2 = validate_strings(s1, s2)
 
         max_length = max(len(s1), len(s2))
         if max_length == 0:
@@ -101,7 +92,7 @@ class SimilarityMetrics:
         Returns:
             Float between 0.0 and 1.0 representing token overlap
         """
-        s1, s2 = cls._validate_strings(s1, s2)
+        s1, s2 = validate_strings(s1, s2)
 
         tokens1 = cls._tokenize(s1)
         tokens2 = cls._tokenize(s2)
@@ -214,7 +205,7 @@ class SimilarityMetrics:
         Returns:
             Float between 0.0 and 1.0 representing Jaro similarity
         """
-        s1, s2 = cls._validate_strings(s1, s2)
+        s1, s2 = validate_strings(s1, s2)
 
         if not s1 and not s2:
             return 1.0
@@ -256,7 +247,7 @@ class SimilarityMetrics:
         if not 0 <= prefix_weight <= 0.25:
             raise ValueError("prefix_weight must be between 0 and 0.25")
 
-        s1, s2 = cls._validate_strings(s1, s2)
+        s1, s2 = validate_strings(s1, s2)
         jaro_score = cls.jaro_similarity(s1, s2)
 
         # Only apply prefix bonus if Jaro similarity is above threshold
@@ -290,7 +281,7 @@ class SimilarityMetrics:
         Returns:
             Float between 0.0 and 1.0 representing hybrid similarity
         """
-        s1, s2 = cls._validate_strings(s1, s2)
+        s1, s2 = validate_strings(s1, s2)
         tokens1 = list(cls._tokenize(s1))
         tokens2 = list(cls._tokenize(s2))
 
@@ -304,7 +295,7 @@ class SimilarityMetrics:
 
         for t1 in tokens1:
             similarities = [
-                (j, cls.normalized_similarity(t1, t2))
+                (j, cls.normalized_levenshtein_similarity(t1, t2))
                 for j, t2 in enumerate(tokens2)
                 if j not in matched_indices
             ]
@@ -318,12 +309,12 @@ class SimilarityMetrics:
         return match_count / union if union > 0 else 1.0
 
 
-def similarity_ratio(s1: str, s2: str) -> float:
+def compute_levenshtein_similarity(s1: str, s2: str) -> float:
     """Calculate normalized similarity ratio between two strings using levenshtein distance."""
-    return SimilarityMetrics.normalized_similarity(s1, s2)
+    return SimilarityMetrics.normalized_levenshtein_similarity(s1, s2)
 
 
-def token_overlap_score(s1: str, s2: str) -> float:
+def compute_jaccard_similarity(s1: str, s2: str) -> float:
     """Calculate Jaccard similarity for token overlap."""
     return SimilarityMetrics.jaccard_similarity(s1, s2)
 
