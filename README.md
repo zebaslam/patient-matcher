@@ -63,9 +63,10 @@ python main.py
 The algorithm uses a **hybrid similarity approach**:
 
 - **Normalization**: All strings are lowercased, punctuation and whitespace are removed, and phone numbers are reduced to digits only.
-- **Pre-filtering**: To improve performance and avoid poor matches, internal patients are filtered to only those with the same **Date of Birth** and **Sex**.
+- **Pre-filtering (Hash-based Indexing)**: To improve performance and avoid poor matches, internal patients are efficiently indexed by normalized
+- **Date of Birth** and **Sex**. For each external patient, only internal patients with matching normalized values are considered, enabling fast lookups instead of scanning the entire list.
 - **Field-specific similarity**:
-  - **First Name**: Custom nickname-aware similarity
+  - **First Name**: Compares only the first token of each name using Jaro-Winkler similarity
   - **Last Name**: Jaro-Winkler
   - **Address**: Combined Jaccard + Levenshtein
   - **Phone Number**: Digit-aware phone similarity
