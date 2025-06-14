@@ -57,7 +57,7 @@
                       class="btn btn-outline-secondary btn-sm"
                       type="button"
                       aria-label="Copy External Patient as JSON"
-                      data-patient="{{ match.external|tojson|safe }}"
+                      data-patient="{{ match.external|tojson|b64encode }}"
                       onclick="copyPatientJsonFromButton(this, 'External Patient')"
                     >
                       <i class="bi bi-clipboard"></i> Copy as JSON
@@ -83,7 +83,7 @@
                       class="btn btn-outline-secondary btn-sm"
                       type="button"
                       aria-label="Copy Internal Patient as JSON"
-                      data-patient="{{ match.internal|tojson|safe }}"
+                      data-patient="{{ match.internal|tojson|b64encode }}"
                       onclick="copyPatientJsonFromButton(this, 'Internal Patient')"
                     >
                       <i class="bi bi-clipboard"></i> Copy as JSON

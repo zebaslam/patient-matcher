@@ -1,4 +1,5 @@
 import re
+import base64
 
 
 def camel_to_title(text):
@@ -16,8 +17,16 @@ def jinja_attribute(obj, name, default=None):
     return getattr(obj, name, default)
 
 
+def b64encode_filter(s):
+    """Jinja filter to base64 encode a string."""
+    if isinstance(s, str):
+        s = s.encode("utf-8")
+    return base64.b64encode(s).decode("utf-8")
+
+
 def register_filters(app):
     """Register all custom filters with the Flask app."""
     app.jinja_env.filters["camel_to_title"] = camel_to_title
     app.jinja_env.filters["attribute"] = jinja_attribute
+    app.jinja_env.filters["b64encode"] = b64encode_filter
     # Add more filters here as needed
