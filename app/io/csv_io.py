@@ -77,7 +77,7 @@ def write_all_matches(matches: list):
         for m in matches:
             writer.writerow(
                 [
-                    m["external"].patient_id,
-                    m["internal"].patient_id,
+                    m.external.patient_id,
+                    m.internal.patient_id,
                 ]
             )

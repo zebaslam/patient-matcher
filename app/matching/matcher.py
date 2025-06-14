@@ -5,42 +5,27 @@ It uses hash-based indexing for efficient pre-filtering and field-specific simil
 for robust, configurable matching. The best match per external patient is returned if above threshold.
 """
 
-from typing import List, Dict, Any
+from typing import List
 from collections import defaultdict
 from app.models.patient import Patient
+from app.models.match_result import MatchResult
+from app.models.best_match import BestMatch
 from app.config import MATCH_THRESHOLD
 from app.matching.scoring import calculate_weighted_similarity
 from app.matching.constants import PRECOMPUTED_NORMALIZATION_FIELDS
 from app.matching.utils import log_elapsed_time
 
 
-NO_MATCH = (None, -1, None)
-
-
-def _normalized_fields_identical(patient1: Patient, patient2: Patient) -> bool:
-    """
-    Check if all relevant normalized fields are identical between two patients.
-    Used for filtering candidates based on strong identifiers (e.g., DOB, Sex).
-    """
-    for norm_field in PRECOMPUTED_NORMALIZATION_FIELDS.values():
-        norm1 = getattr(patient1, norm_field, "")
-        norm2 = getattr(patient2, norm_field, "")
-        if norm1 and norm2 and norm1 != norm2:
-            return False
-    return True
-
-
 def _find_best_internal_match(
     external_patient: Patient, internal_patients: List[Patient]
-):
+) -> BestMatch:
     """
     Find the best matching internal patient for a given external patient based on similarity score.
     Assumes all internal_patients already match on normalized fields (pre-filtered).
-    Returns a tuple: (best_internal_patient, best_score, score_breakdown_dict),
-    or NO_MATCH if no candidates are provided.
+    Returns a BestMatch instance, or one with None and -1 if no candidates are provided.
     """
     if not internal_patients:
-        return NO_MATCH
+        return BestMatch(internal=None, score=-1, breakdown={})
 
     def score_tuple(internal_patient: Patient):
         score, breakdown = calculate_weighted_similarity(
@@ -51,15 +36,19 @@ def _find_best_internal_match(
     best_internal, best_score, best_breakdown = max(
         (score_tuple(internal_patient) for internal_patient in internal_patients),
         key=lambda x: x[1],
-        default=NO_MATCH,
+        default=(None, -1, None),
     )
-    return best_internal, best_score, best_breakdown
+    return BestMatch(
+        internal=best_internal,
+        score=best_score,
+        breakdown=best_breakdown or {},
+    )
 
 
 @log_elapsed_time
 def match_patients(
     internal: List[Patient], external: List[Patient]
-) -> List[Dict[str, Any]]:
+) -> List[MatchResult]:
     """
     Match patients from two datasets using weighted field similarity with hash-based pre-filtering.
     - Internal patients are indexed by normalized fields (e.g., DOB, Sex) for fast candidate lookup.
@@ -83,16 +72,14 @@ def match_patients(
             getattr(external_patient, norm_field, "") for norm_field in norm_fields
         )
         candidates = index.get(key, [])
-        best_internal, best_score, best_breakdown = _find_best_internal_match(
-            external_patient, candidates
-        )
-        if best_score >= MATCH_THRESHOLD and best_internal is not None:
+        best_match = _find_best_internal_match(external_patient, candidates)
+        if best_match.score >= MATCH_THRESHOLD and best_match.internal is not None:
             matches.append(
-                {
-                    "external": external_patient,
-                    "internal": best_internal,
-                    "score": best_score,
-                    "breakdown": best_breakdown,
-                }
+                MatchResult(
+                    external=external_patient,
+                    internal=best_match.internal,
+                    score=best_match.score,
+                    breakdown=best_match.breakdown,
+                )
             )
     return matches
