@@ -6,8 +6,8 @@ including names, phone numbers, addresses, and general text fields.
 
 from app.config import (
     PHONE_PARTIAL_MATCH,
-    GENERAL_SIMILARITY_MULTIPLIER,
 )
+from app.models.field_similarity_result import FieldSimilarityResult
 from .string_similarity import (
     levenshtein_similarity,
     jaccard_similarity,
@@ -17,35 +17,41 @@ from .string_similarity import (
 from .normalization import _normalize_phone, normalize_string
 
 
-def calculate_field_similarity(first_field, second_field, field_type, field_name):
+def calculate_field_similarity(
+    first_field, second_field, field_type, field_name
+) -> FieldSimilarityResult:
     """
     Calculate similarity between two field values based on field type and name.
-    Returns a float between 0.0 and 1.0.
+    Returns a FieldSimilarityResult.
     """
     norm1 = normalize_string(first_field, field_name)
     norm2 = normalize_string(second_field, field_name)
 
     if not norm1 or not norm2:
-        return 0.0
+        return FieldSimilarityResult(0.0, "One more fields are empty")
     if norm1 == norm2:
-        return 1.0
+        return FieldSimilarityResult(1.0, "exact")
 
     match (field_name, field_type):
         case (_, "exact"):
-            return 1.0 if norm1 == norm2 else 0.0
+            return FieldSimilarityResult(1.0 if norm1 == norm2 else 0.0, "exact")
         case ("phone_number", _) | ("phone", _):
-            return phone_similarity(norm1, norm2)
+            sim = phone_similarity(norm1, norm2)
+            return FieldSimilarityResult(sim, "levenshtein (phone)")
         case ("address", _):
-            return combined_jaccard_levenshtein_similarity(norm1, norm2)
+            sim = combined_jaccard_levenshtein_similarity(norm1, norm2)
+            return FieldSimilarityResult(sim, "combined_jaccard_levenshtein")
         case ("first_name", _):
-            return first_name_similarity(norm1, norm2)
+            sim = first_name_similarity(norm1, norm2)
+            return FieldSimilarityResult(sim, "jaro_winkler (first_name)")
         case ("last_name", _):
-            return jaro_winkler_similarity(norm1, norm2)
+            sim = jaro_winkler_similarity(norm1, norm2)
+            return FieldSimilarityResult(sim, "jaro_winkler (last_name)")
         case _:
             return general_similarity(norm1, norm2)
 
 
-def first_name_similarity(name1, name2):
+def first_name_similarity(name1, name2) -> float:
     """
     Compare first names using only the first token.
     """
@@ -60,7 +66,7 @@ def first_name_similarity(name1, name2):
             return jaro_winkler_similarity(n1, n2)
 
 
-def phone_similarity(phone1, phone2):
+def phone_similarity(phone1, phone2) -> float:
     """
     Compare phone numbers after normalization.
     """
@@ -76,14 +82,14 @@ def phone_similarity(phone1, phone2):
             return sim if sim >= 0.5 else 0.0
 
 
-def general_similarity(norm1, norm2):
+def general_similarity(norm1, norm2) -> FieldSimilarityResult:
     """
-    General similarity for normalized strings.
+    General similarity for normalized strings. Returns FieldSimilarityResult.
     """
     if " " in norm1 or " " in norm2:
-        token_score = jaccard_similarity(norm1, norm2)
-        similarity_score = (
-            levenshtein_similarity(norm1, norm2) * GENERAL_SIMILARITY_MULTIPLIER
+        return FieldSimilarityResult(
+            jaccard_similarity(norm1, norm2), "jaccard (general)"
         )
-        return max(token_score, similarity_score)
-    return levenshtein_similarity(norm1, norm2)
+    return FieldSimilarityResult(
+        levenshtein_similarity(norm1, norm2), "levenshtein (general)"
+    )

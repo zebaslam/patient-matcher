@@ -9,10 +9,11 @@
             <th class="text-end">Similarity</th>
             <th class="text-end">Weight</th>
             <th class="text-end">Weighted Score</th>
+            <th>Algorithm</th>
           </tr>
         </thead>
         <tbody>
-          {% for field, info in match.breakdown.fields.items() %}
+          {% for field, info in match.score.breakdown.items() %}
           <tr>
             <td class="fw-semibold">{{ field|camel_to_title }}</td>
             <td class="text-end">{{ info.similarity|round(3) }}</td>
@@ -20,6 +21,7 @@
             <td class="text-end fw-bold text-primary">
               {{ info.weighted_score|round(3) }}
             </td>
+            <td class="text-end">{{ info.algorithm }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -27,7 +29,7 @@
           <tr class="table-light">
             <td colspan="3" class="fw-bold text-end">Final Score:</td>
             <td class="fw-bold text-primary text-end fs-5">
-              {{ match.breakdown.final_score|round(3) }}
+              {{ match.score.value|round(3) }}
             </td>
           </tr>
         </tfoot>

@@ -1,6 +1,9 @@
 import unittest
 from unittest.mock import patch
 from main import PATIENT_FIELDS, app
+from app.models.match_result import MatchResult
+from app.models.patient import Patient
+from app.models.match_score import MatchScore
 
 
 class TestMain(unittest.TestCase):
@@ -61,12 +64,34 @@ class TestMain(unittest.TestCase):
         """
         internal = [{"patient_id": 1}]
         external = [{"patient_id": 2}]
-        matches = [{"score": 2}, {"score": 1}]
+        dummy_patient = Patient(
+            patient_id="dummy",
+            first_name="",
+            last_name="",
+            dob="",
+            sex="",
+            phone_number="",
+            address="",
+            city="",
+            zipcode="",
+        )
+        matches = [
+            MatchResult(
+                external=dummy_patient,
+                internal=dummy_patient,
+                score=MatchScore(value=2, breakdown={}),
+            ),
+            MatchResult(
+                external=dummy_patient,
+                internal=dummy_patient,
+                score=MatchScore(value=1, breakdown={}),
+            ),
+        ]
         mock_load_data.return_value = (internal, external)
         mock_match_patients.return_value = matches
         mock_render_template.return_value = "matches rendered"
         response = self.client.get("/")
-        sorted_matches = sorted(matches, key=lambda m: m["score"])
+        sorted_matches = sorted(matches, key=lambda m: m.score.value)
         mock_render_template.assert_called_with(
             "index.html", matches=sorted_matches, patient_fields=PATIENT_FIELDS
         )
@@ -108,6 +133,48 @@ class TestMain(unittest.TestCase):
             "index.html", matches=[], error="bad value"
         )
         self.assertEqual(response.data, b"error page")
+
+    @patch("main.write_match")
+    @patch("main.MatchOutput")
+    def test_accept_match_success(self, mock_match_output, mock_write_match):
+        """
+        Test the accept_match route when writing the match is successful.
+
+        This test verifies that the accept_match route processes the POSTed JSON,
+        creates a MatchOutput, writes the match, and returns a success response.
+        """
+        mock_write_match.return_value = True
+        mock_match_output.return_value = "mocked_output"
+        data = {"external_id": "ext123", "internal_id": "int456"}
+        response = self.client.post(
+            "/accept",
+            json=data,
+        )
+        mock_match_output.assert_called_with(external_id="ext123", internal_id="int456")
+        mock_write_match.assert_called_with("mocked_output")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"success": True})
+
+    @patch("main.write_match")
+    @patch("main.MatchOutput")
+    def test_accept_match_failure(self, mock_match_output, mock_write_match):
+        """
+        Test the accept_match route when writing the match fails.
+
+        This test verifies that the accept_match route returns a 400 response
+        when write_match returns False.
+        """
+        mock_write_match.return_value = False
+        mock_match_output.return_value = "mocked_output"
+        data = {"external_id": "ext123", "internal_id": "int456"}
+        response = self.client.post(
+            "/accept",
+            json=data,
+        )
+        mock_match_output.assert_called_with(external_id="ext123", internal_id="int456")
+        mock_write_match.assert_called_with("mocked_output")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json(), {"success": False})
 
 
 if __name__ == "__main__":

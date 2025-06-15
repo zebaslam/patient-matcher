@@ -6,6 +6,7 @@ from app.matching.matcher import match_patients
 from app.io.csv_io import load_data, write_match, create_output_files, write_all_matches
 from app.config import DEBUG, PORT, LOG_LEVEL
 from app.filters import register_filters
+from app.models.match_output import MatchOutput
 
 
 PATIENT_FIELDS = [
@@ -43,7 +44,7 @@ def create_app() -> Flask:
                 )
             matches = sorted(
                 match_patients(internal, external),
-                key=lambda m: m["score"],
+                key=lambda m: m.score.value,
                 reverse=False,
             )
             write_all_matches(matches)
@@ -57,9 +58,11 @@ def create_app() -> Flask:
     def accept_match():
         """Accept a patient match and write it to the CSV file."""
         data = request.get_json(force=True)
-        ext_id = data.get("external_id")
-        int_id = data.get("internal_id")
-        success = write_match(ext_id, int_id)
+        match_output = MatchOutput(
+            external_id=data.get("external_id"),
+            internal_id=data.get("internal_id"),
+        )
+        success = write_match(match_output)
         return jsonify(success=success), (200 if success else 400)
 
     return flask_app

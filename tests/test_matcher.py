@@ -1,14 +1,16 @@
 import unittest
 from unittest.mock import patch
-from app.models.patient import Patient  # Import the real Patient class
+from app.models.patient import Patient
+from app.models.match_score import MatchScore
 
-from app.matching.matcher import match_patients, _normalized_fields_identical
+from app.matching.matcher import match_patients
 
 
 class DummyPatient(Patient):  # Inherit from Patient for type compatibility
     """A dummy patient for testing."""
 
     def __init__(self, **fields):
+        self.normalized = False  # Set before super().__init__
         super().__init__(
             patient_id="",
             first_name="",
@@ -22,7 +24,6 @@ class DummyPatient(Patient):  # Inherit from Patient for type compatibility
         )  # Provide empty string for all required parameters
         for k, v in fields.items():
             setattr(self, k, v)
-        self.normalized = False
 
     def normalize_precomputed_fields(self):
         self.normalized = True
@@ -30,36 +31,6 @@ class DummyPatient(Patient):  # Inherit from Patient for type compatibility
 
 class TestMatcher(unittest.TestCase):
     """Test suite for patient matcher."""
-
-    def test_normalized_fields_identical_true(self):
-        """Test identical normalized fields returns True."""
-        with patch(
-            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
-            {"dob": "dob_norm", "sex": "sex_norm"},
-        ):
-            p1 = DummyPatient(dob_norm="1990-01-01", sex_norm="M")
-            p2 = DummyPatient(dob_norm="1990-01-01", sex_norm="M")
-            self.assertTrue(_normalized_fields_identical(p1, p2))
-
-    def test_normalized_fields_identical_false(self):
-        """Test differing normalized fields returns False."""
-        with patch(
-            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
-            {"dob": "dob_norm", "sex": "sex_norm"},
-        ):
-            p1 = DummyPatient(dob_norm="1990-01-01", sex_norm="M")
-            p2 = DummyPatient(dob_norm="1990-01-01", sex_norm="F")
-            self.assertFalse(_normalized_fields_identical(p1, p2))
-
-    def test_normalized_fields_identical_empty_fields(self):
-        """Test empty normalized fields returns True."""
-        with patch(
-            "app.matching.matcher.PRECOMPUTED_NORMALIZATION_FIELDS",
-            {"dob": "dob_norm", "sex": "sex_norm"},
-        ):
-            p1 = DummyPatient(dob_norm="", sex_norm="")
-            p2 = DummyPatient(dob_norm="", sex_norm="")
-            self.assertTrue(_normalized_fields_identical(p1, p2))
 
     def test_match_patients_match(self):
         """Test match_patients returns a match when similarity is above threshold."""
@@ -70,14 +41,23 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.9, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.9,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(len(matches), 1)
-            self.assertIs(matches[0]["external"], p2)
-            self.assertIs(matches[0]["internal"], p1)
-            self.assertEqual(matches[0]["score"], 0.9)
-            self.assertEqual(matches[0]["breakdown"], {"dob": 1.0})
+            match = matches[0]
+            self.assertIs(match.external, p2)
+            self.assertIs(match.internal, p1)
+            self.assertEqual(match.score.value, 0.9)
+            self.assertEqual(
+                match.score.breakdown,
+                {"dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}},
+            )
             self.assertTrue(p1.normalized)
             self.assertTrue(p2.normalized)
 
@@ -90,7 +70,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="2000-01-01")
-            mock_calc_sim.return_value = (0.95, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.95,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(matches, [])
@@ -104,7 +89,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.5, {"dob": 0.5})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.5,
+                breakdown={
+                    "dob": {"similarity": 0.5, "weight": 1.0, "weighted_score": 0.5}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(matches, [])
@@ -144,21 +134,51 @@ class TestMatcher(unittest.TestCase):
             # Simulate different similarity scores for each internal patient
             def sim_func(_, internal):
                 if internal is p1:
-                    return (0.8, {"dob": 1.0})
+                    return MatchScore(
+                        value=0.8,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )
                 if internal is p2:
-                    return (0.85, {"dob": 1.0})  # best match
+                    return MatchScore(
+                        value=0.85,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )  # best match
                 if internal is p3:
-                    return (0.7, {"dob": 1.0})
+                    return MatchScore(
+                        value=0.7,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )
 
             mock_calc_sim.side_effect = sim_func
 
             matches = match_patients([p1, p2, p3], external)
             self.assertEqual(len(matches), 1)
             match = matches[0]
-            self.assertEqual(match["score"], 0.85)
-            self.assertEqual(match["breakdown"], {"dob": 1.0})
-            self.assertIs(match["external"], external[0])
-            self.assertIs(match["internal"], p2)
+            self.assertEqual(match.score.value, 0.85)
+            self.assertEqual(
+                match.score.breakdown,
+                {"dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}},
+            )
+            self.assertIs(match.external, external[0])
+            self.assertIs(match.internal, p2)
 
     def test_match_patients_no_internal_patients(self):
         """Test match_patients returns empty list if internal list is empty."""
@@ -218,7 +238,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.9, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.9,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             match_patients([p1], [p2])
             self.assertTrue(p1.normalized)

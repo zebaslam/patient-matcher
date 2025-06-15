@@ -38,7 +38,7 @@
         <div class="card-header bg-white border-0 pb-0 rounded-5">
           <h5 class="card-title fw-semibold mb-0">
             Match Score:
-            <span class="text-primary">{{ match.score|round(3) }}</span>
+            <span class="text-primary">{{ match.score.value|round(3) }}</span>
           </h5>
         </div>
         <div class="card-body">
@@ -57,7 +57,7 @@
                       class="btn btn-outline-secondary btn-sm"
                       type="button"
                       aria-label="Copy External Patient as JSON"
-                      data-patient="{{ match.external|tojson|safe }}"
+                      data-patient="{{ match.external|tojson|b64encode }}"
                       onclick="copyPatientJsonFromButton(this, 'External Patient')"
                     >
                       <i class="bi bi-clipboard"></i> Copy as JSON
@@ -83,7 +83,7 @@
                       class="btn btn-outline-secondary btn-sm"
                       type="button"
                       aria-label="Copy Internal Patient as JSON"
-                      data-patient="{{ match.internal|tojson|safe }}"
+                      data-patient="{{ match.internal|tojson|b64encode }}"
                       onclick="copyPatientJsonFromButton(this, 'Internal Patient')"
                     >
                       <i class="bi bi-clipboard"></i> Copy as JSON

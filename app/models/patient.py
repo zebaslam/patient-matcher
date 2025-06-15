@@ -32,6 +32,9 @@ class Patient:
     zipcode: str
     score: float = 0.0
 
+    def __post_init__(self):
+        self.normalize_precomputed_fields()
+
     def normalize_precomputed_fields(self):
         """Attach normalized fields as attributes to this Patient."""
         for field, norm_field in PRECOMPUTED_NORMALIZATION_FIELDS.items():

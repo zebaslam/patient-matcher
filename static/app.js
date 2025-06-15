@@ -76,6 +76,19 @@ function copyPatientJson(patientObj, label) {
 }
 
 function copyPatientJsonFromButton(btn, label) {
-  const patientObj = JSON.parse(btn.getAttribute('data-patient'));
+  const data = btn.getAttribute('data-patient');
+  if (!data) {
+    alert('No patient data found.');
+    return;
+  }
+  let patientObj;
+  try {
+    const jsonStr = atob(data);
+    patientObj = JSON.parse(jsonStr);
+  } catch (e) {
+    alert('Invalid patient data.');
+    console.error('Error parsing patient data:', data);
+    return;
+  }
   copyPatientJson(patientObj, label);
 }
