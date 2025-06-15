@@ -12,6 +12,7 @@ from app.matching.constants import (
     DEFAULT_SIMILARITY,
 )
 from app.models.match_score import MatchScore
+from app.models.field_similarity_result import FieldSimilarityResult
 from .field_similarity import calculate_field_similarity
 
 
@@ -35,7 +36,7 @@ def _get_normalized_precompute_values(
     return n1, n2
 
 
-def _update_breakdown_and_score(breakdown, field_name, sim, weight):
+def _update_breakdown_and_score(breakdown, field_name, sim, weight, algorithm=None):
     """
     Update the breakdown dictionary and calculate the weighted score for a field.
 
@@ -53,6 +54,7 @@ def _update_breakdown_and_score(breakdown, field_name, sim, weight):
         "similarity": sim,
         "weight": weight,
         "weighted_score": wscore,
+        "algorithm": algorithm,
     }
     return wscore
 
@@ -84,15 +86,16 @@ def calculate_weighted_similarity(patient1: Patient, patient2: Patient) -> Match
         n1, n2 = _get_normalized_precompute_values(patient1, patient2, field_name)
         # Penalize missing data for critical fields
         if (not n1 or not n2) and field_name in CRITICAL_FIELDS:
-            sim = 0.0
+            fsim = FieldSimilarityResult(0.0, "empty")
         elif not n1 or not n2:
-            sim = 0.5
+            fsim = FieldSimilarityResult(0.5, "empty")
         else:
-            sim = calculate_field_similarity(
+            fsim = calculate_field_similarity(
                 n1, n2, FIELD_TYPES.get(field_name, "general"), field_name
             )
-
-        wscore = _update_breakdown_and_score(breakdown, field_name, sim, weight)
+        wscore = _update_breakdown_and_score(
+            breakdown, field_name, fsim.similarity, weight, fsim.algorithm
+        )
         total_weighted_score += wscore
         total_weight_used += weight
 

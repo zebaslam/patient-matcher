@@ -9,6 +9,7 @@
             <th class="text-end">Similarity</th>
             <th class="text-end">Weight</th>
             <th class="text-end">Weighted Score</th>
+            <th>Algorithm</th>
           </tr>
         </thead>
         <tbody>
@@ -20,6 +21,7 @@
             <td class="text-end fw-bold text-primary">
               {{ info.weighted_score|round(3) }}
             </td>
+            <td class="text-end">{{ info.algorithm }}</td>
           </tr>
           {% endfor %}
         </tbody>

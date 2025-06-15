@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch
 from app.matching import scoring
 from app.models.patient import Patient
+from app.models.field_similarity_result import FieldSimilarityResult
 
 # Disable protected member access warnings for test methods
 # pylint: disable=protected-access
@@ -92,7 +93,11 @@ class TestScoring(unittest.TestCase):
         Test that partial similarity across all fields results in a score between 0 and 1,
         and that all fields are included in the breakdown.
         """
-        mock_sim.side_effect = [0.5, 0.7, 0.8]
+        mock_sim.side_effect = [
+            FieldSimilarityResult(0.5, "alg1"),
+            FieldSimilarityResult(0.7, "alg2"),
+            FieldSimilarityResult(0.8, "alg3"),
+        ]
         p1 = DummyPatient(
             first_name_norm="Jon", last_name_norm="Dae", dob_norm="1990-01-01"
         )
@@ -108,7 +113,7 @@ class TestScoring(unittest.TestCase):
         """
         Test that when all similarities are zero, the score is zero and early_exit is set in details.
         """
-        mock_sim.return_value = 0.0
+        mock_sim.return_value = FieldSimilarityResult(0.0, "alg")
         p1 = DummyPatient(first_name_norm="A", last_name_norm="B", dob_norm="C")
         p2 = DummyPatient(first_name_norm="X", last_name_norm="Y", dob_norm="Z")
         score = scoring.calculate_weighted_similarity(p1, p2)
@@ -119,7 +124,7 @@ class TestScoring(unittest.TestCase):
         """
         Test that missing fields in one patient are handled correctly in the breakdown.
         """
-        mock_sim.return_value = 1.0
+        mock_sim.return_value = FieldSimilarityResult(1.0, "alg")
         p1 = DummyPatient(
             first_name_norm="John", last_name_norm="", dob_norm="1990-01-01"
         )
@@ -191,6 +196,72 @@ class TestScoring(unittest.TestCase):
         self.assertEqual(score.value, 0.5)
         scoring.FIELD_WEIGHTS = orig_field_weights
         scoring.CRITICAL_FIELDS = orig_critical_fields
+
+    def test_penalize_missing_critical_field(self):
+        """
+        Test that missing data for a critical field results in a similarity of 0.0 for that field.
+        """
+        # dob is critical
+        p1 = DummyPatient(first_name_norm="John", last_name_norm="Doe", dob_norm="")
+        p2 = DummyPatient(
+            first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-01"
+        )
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertEqual(score.breakdown["dob"]["similarity"], 0.0)
+        self.assertEqual(score.breakdown["dob"]["algorithm"], "empty")
+
+    def test_penalize_missing_noncritical_field(self):
+        """
+        Test that missing data for a non-critical field results in a similarity of 0.5 for that field.
+        """
+        # first_name is not critical
+        p1 = DummyPatient(
+            first_name_norm="", last_name_norm="Doe", dob_norm="1990-01-01"
+        )
+        p2 = DummyPatient(
+            first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-01"
+        )
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertEqual(score.breakdown["first_name"]["similarity"], 0.5)
+        self.assertEqual(score.breakdown["first_name"]["algorithm"], "empty")
+
+    def test_breakdown_contains_algorithm(self):
+        """
+        Test that the breakdown for each field contains the algorithm used.
+        """
+        with patch("app.matching.scoring.calculate_field_similarity") as mock_sim:
+            mock_sim.return_value = FieldSimilarityResult(1.0, "dummy_alg")
+            p1 = DummyPatient(first_name_norm="A", last_name_norm="B", dob_norm="C")
+            p2 = DummyPatient(first_name_norm="A", last_name_norm="B", dob_norm="C")
+            score = scoring.calculate_weighted_similarity(p1, p2)
+            for field in self.field_weights:
+                self.assertIn("algorithm", score.breakdown[field])
+                self.assertEqual(score.breakdown[field]["algorithm"], "dummy_alg")
+
+    def test_weighted_score_calculation(self):
+        """
+        Test that the weighted score for each field is calculated as similarity * weight.
+        """
+        with patch("app.matching.scoring.calculate_field_similarity") as mock_sim:
+            mock_sim.side_effect = [
+                FieldSimilarityResult(0.5, "alg1"),
+                FieldSimilarityResult(0.7, "alg2"),
+                FieldSimilarityResult(0.8, "alg3"),
+            ]
+            p1 = DummyPatient(
+                first_name_norm="Jon", last_name_norm="Dae", dob_norm="1990-01-01"
+            )
+            p2 = DummyPatient(
+                first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-02"
+            )
+            score = scoring.calculate_weighted_similarity(p1, p2)
+            self.assertAlmostEqual(
+                score.breakdown["first_name"]["weighted_score"], 0.5 * 2.0
+            )
+            self.assertAlmostEqual(
+                score.breakdown["last_name"]["weighted_score"], 0.7 * 2.0
+            )
+            self.assertAlmostEqual(score.breakdown["dob"]["weighted_score"], 0.8 * 3.0)
 
 
 if __name__ == "__main__":

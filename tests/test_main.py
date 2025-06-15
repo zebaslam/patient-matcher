@@ -134,6 +134,48 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(response.data, b"error page")
 
+    @patch("main.write_match")
+    @patch("main.MatchOutput")
+    def test_accept_match_success(self, mock_match_output, mock_write_match):
+        """
+        Test the accept_match route when writing the match is successful.
+
+        This test verifies that the accept_match route processes the POSTed JSON,
+        creates a MatchOutput, writes the match, and returns a success response.
+        """
+        mock_write_match.return_value = True
+        mock_match_output.return_value = "mocked_output"
+        data = {"external_id": "ext123", "internal_id": "int456"}
+        response = self.client.post(
+            "/accept",
+            json=data,
+        )
+        mock_match_output.assert_called_with(external_id="ext123", internal_id="int456")
+        mock_write_match.assert_called_with("mocked_output")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"success": True})
+
+    @patch("main.write_match")
+    @patch("main.MatchOutput")
+    def test_accept_match_failure(self, mock_match_output, mock_write_match):
+        """
+        Test the accept_match route when writing the match fails.
+
+        This test verifies that the accept_match route returns a 400 response
+        when write_match returns False.
+        """
+        mock_write_match.return_value = False
+        mock_match_output.return_value = "mocked_output"
+        data = {"external_id": "ext123", "internal_id": "int456"}
+        response = self.client.post(
+            "/accept",
+            json=data,
+        )
+        mock_match_output.assert_called_with(external_id="ext123", internal_id="int456")
+        mock_write_match.assert_called_with("mocked_output")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json(), {"success": False})
+
 
 if __name__ == "__main__":
     unittest.main()
