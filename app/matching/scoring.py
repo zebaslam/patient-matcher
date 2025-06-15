@@ -4,7 +4,6 @@ This module provides functions to calculate the weighted similarity score betwee
 It uses configurable field weights and types, and supports penalizing missing data for critical fields.
 """
 
-from typing import Tuple
 from app.models.patient import Patient
 from app.config import FIELD_WEIGHTS, FIELD_TYPES
 from app.matching.constants import (
@@ -12,6 +11,7 @@ from app.matching.constants import (
     NORMALIZED_FIELDS,
     DEFAULT_SIMILARITY,
 )
+from app.models.match_score import MatchScore
 from .field_similarity import calculate_field_similarity
 
 
@@ -57,9 +57,7 @@ def _update_breakdown_and_score(breakdown, field_name, sim, weight):
     return wscore
 
 
-def calculate_weighted_similarity(
-    patient1: Patient, patient2: Patient
-) -> Tuple[float, dict]:
+def calculate_weighted_similarity(patient1: Patient, patient2: Patient) -> MatchScore:
     """
     Calculate the weighted similarity score between two patient records.
 
@@ -72,7 +70,7 @@ def calculate_weighted_similarity(
         patient2 (Patient): The second patient object.
 
     Returns:
-        Tuple[float, dict]: The final similarity score and a breakdown dictionary.
+        MatchScore: An object containing the final similarity score and a breakdown of field similarities.
     """
     # Ensure all normalized fields are present
     patient1.normalize_fields()
@@ -100,5 +98,7 @@ def calculate_weighted_similarity(
 
     final_score = total_weighted_score / total_weight_used if total_weight_used else 0.0
     final_score = max(DEFAULT_SIMILARITY, final_score)
-
-    return final_score, {"fields": breakdown, "final_score": final_score}
+    return MatchScore(
+        value=final_score,
+        breakdown=breakdown,
+    )

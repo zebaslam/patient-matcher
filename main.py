@@ -44,7 +44,7 @@ def create_app() -> Flask:
                 )
             matches = sorted(
                 match_patients(internal, external),
-                key=lambda m: m.score,
+                key=lambda m: float(m.score.value),
                 reverse=False,
             )
             write_all_matches(matches)

@@ -99,10 +99,9 @@ class TestScoring(unittest.TestCase):
         p2 = DummyPatient(
             first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-02"
         )
-        score, details = scoring.calculate_weighted_similarity(p1, p2)
-        self.assertTrue(0 < score < 1)
-        self.assertIn("fields", details)
-        self.assertEqual(len(details["fields"]), 3)
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertTrue(0 < score.value < 1)
+        self.assertEqual(len(score.breakdown), 3)
 
     @patch("app.matching.scoring.calculate_field_similarity")
     def test_no_fields_match(self, mock_sim):
@@ -112,8 +111,8 @@ class TestScoring(unittest.TestCase):
         mock_sim.return_value = 0.0
         p1 = DummyPatient(first_name_norm="A", last_name_norm="B", dob_norm="C")
         p2 = DummyPatient(first_name_norm="X", last_name_norm="Y", dob_norm="Z")
-        score, _ = scoring.calculate_weighted_similarity(p1, p2)
-        self.assertEqual(score, 0.0)
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertEqual(score.value, 0.0)
 
     @patch("app.matching.scoring.calculate_field_similarity")
     def test_missing_fields_in_one_patient(self, mock_sim):
@@ -127,11 +126,12 @@ class TestScoring(unittest.TestCase):
         p2 = DummyPatient(
             first_name_norm="John", last_name_norm="Doe", dob_norm="1990-01-01"
         )
-        _, details = scoring.calculate_weighted_similarity(p1, p2)
-        self.assertIn("first_name", details["fields"])
-        self.assertIn("dob", details["fields"])
-        self.assertIn("last_name", details["fields"])
-        self.assertEqual(details["fields"]["last_name"]["similarity"], 0.5)
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertIn("first_name", score.breakdown)
+        self.assertIn("dob", score.breakdown)
+        self.assertIn("last_name", score.breakdown)
+        # The test expects last_name similarity to be 0.5 for missing field
+        self.assertEqual(score.breakdown["last_name"]["similarity"], 0.5)
 
     def test__get_normalized_precompute_values_missing_norm(self):
         """
@@ -162,8 +162,8 @@ class TestScoring(unittest.TestCase):
         scoring.FIELD_WEIGHTS = {}
         p1 = DummyPatient()
         p2 = DummyPatient()
-        score, _ = scoring.calculate_weighted_similarity(p1, p2)
-        self.assertEqual(score, scoring.DEFAULT_SIMILARITY)
+        score = scoring.calculate_weighted_similarity(p1, p2)
+        self.assertEqual(score.value, scoring.DEFAULT_SIMILARITY)
         scoring.FIELD_WEIGHTS = orig_field_weights
 
     def test_final_score_below_default(self):
@@ -186,9 +186,9 @@ class TestScoring(unittest.TestCase):
 
         p1 = P()
         p2 = P()
-        score, _ = scoring.calculate_weighted_similarity(p1, p2)
+        score = scoring.calculate_weighted_similarity(p1, p2)
         # The expected score is 0.5, since both normalized values are empty and not critical, so sim=0.5
-        self.assertEqual(score, 0.5)
+        self.assertEqual(score.value, 0.5)
         scoring.FIELD_WEIGHTS = orig_field_weights
         scoring.CRITICAL_FIELDS = orig_critical_fields
 

@@ -3,6 +3,7 @@ from unittest.mock import patch
 from main import PATIENT_FIELDS, app
 from app.models.match_result import MatchResult
 from app.models.patient import Patient
+from app.models.match_score import MatchScore
 
 
 class TestMain(unittest.TestCase):
@@ -76,17 +77,21 @@ class TestMain(unittest.TestCase):
         )
         matches = [
             MatchResult(
-                external=dummy_patient, internal=dummy_patient, score=2, breakdown={}
+                external=dummy_patient,
+                internal=dummy_patient,
+                score=MatchScore(value=2, breakdown={}),
             ),
             MatchResult(
-                external=dummy_patient, internal=dummy_patient, score=1, breakdown={}
+                external=dummy_patient,
+                internal=dummy_patient,
+                score=MatchScore(value=1, breakdown={}),
             ),
         ]
         mock_load_data.return_value = (internal, external)
         mock_match_patients.return_value = matches
         mock_render_template.return_value = "matches rendered"
         response = self.client.get("/")
-        sorted_matches = sorted(matches, key=lambda m: m.score)
+        sorted_matches = sorted(matches, key=lambda m: m.score.value)
         mock_render_template.assert_called_with(
             "index.html", matches=sorted_matches, patient_fields=PATIENT_FIELDS
         )

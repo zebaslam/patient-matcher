@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 from app.models.patient import Patient
+from app.models.match_score import MatchScore
 
 from app.matching.matcher import match_patients
 
@@ -40,15 +41,23 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.9, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.9,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(len(matches), 1)
             match = matches[0]
             self.assertIs(match.external, p2)
             self.assertIs(match.internal, p1)
-            self.assertEqual(match.score, 0.9)
-            self.assertEqual(match.breakdown, {"dob": 1.0})
+            self.assertEqual(match.score.value, 0.9)
+            self.assertEqual(
+                match.score.breakdown,
+                {"dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}},
+            )
             self.assertTrue(p1.normalized)
             self.assertTrue(p2.normalized)
 
@@ -61,7 +70,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="2000-01-01")
-            mock_calc_sim.return_value = (0.95, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.95,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(matches, [])
@@ -75,7 +89,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.5, {"dob": 0.5})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.5,
+                breakdown={
+                    "dob": {"similarity": 0.5, "weight": 1.0, "weighted_score": 0.5}
+                },
+            )
 
             matches = match_patients([p1], [p2])
             self.assertEqual(matches, [])
@@ -115,19 +134,49 @@ class TestMatcher(unittest.TestCase):
             # Simulate different similarity scores for each internal patient
             def sim_func(_, internal):
                 if internal is p1:
-                    return (0.8, {"dob": 1.0})
+                    return MatchScore(
+                        value=0.8,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )
                 if internal is p2:
-                    return (0.85, {"dob": 1.0})  # best match
+                    return MatchScore(
+                        value=0.85,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )  # best match
                 if internal is p3:
-                    return (0.7, {"dob": 1.0})
+                    return MatchScore(
+                        value=0.7,
+                        breakdown={
+                            "dob": {
+                                "similarity": 1.0,
+                                "weight": 1.0,
+                                "weighted_score": 1.0,
+                            }
+                        },
+                    )
 
             mock_calc_sim.side_effect = sim_func
 
             matches = match_patients([p1, p2, p3], external)
             self.assertEqual(len(matches), 1)
             match = matches[0]
-            self.assertEqual(match.score, 0.85)
-            self.assertEqual(match.breakdown, {"dob": 1.0})
+            self.assertEqual(match.score.value, 0.85)
+            self.assertEqual(
+                match.score.breakdown,
+                {"dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}},
+            )
             self.assertIs(match.external, external[0])
             self.assertIs(match.internal, p2)
 
@@ -189,7 +238,12 @@ class TestMatcher(unittest.TestCase):
         ) as mock_calc_sim:
             p1 = DummyPatient(dob_norm="1990-01-01")
             p2 = DummyPatient(dob_norm="1990-01-01")
-            mock_calc_sim.return_value = (0.9, {"dob": 1.0})
+            mock_calc_sim.return_value = MatchScore(
+                value=0.9,
+                breakdown={
+                    "dob": {"similarity": 1.0, "weight": 1.0, "weighted_score": 1.0}
+                },
+            )
 
             match_patients([p1], [p2])
             self.assertTrue(p1.normalized)

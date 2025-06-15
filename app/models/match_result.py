@@ -5,10 +5,10 @@ Each MatchResult contains the external patient, the matched internal patient, th
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict
 
 from app.models.patient import Patient
 from app.models.best_match import BestMatch
+from app.models.match_score import MatchScore
 
 
 @dataclass
@@ -20,13 +20,11 @@ class MatchResult:
         external: The external Patient being matched.
         internal: The matched internal Patient (must not be None).
         score: The similarity score for the match.
-        breakdown: A dictionary with the breakdown of the score by field.
     """
 
     external: Patient
     internal: Patient  # type: ignore
-    score: float
-    breakdown: Dict[str, Any]
+    score: MatchScore
 
     @classmethod
     def from_best_match(cls, external: Patient, best_match: BestMatch) -> "MatchResult":
@@ -38,7 +36,7 @@ class MatchResult:
             best_match (BestMatch): The best match result containing the internal patient and match details.
 
         Returns:
-            MatchResult: A new MatchResult instance populated with the external patient, the matched internal patient, the match score, and the breakdown.
+            MatchResult: A new MatchResult instance populated with the external patient, the matched internal patient, and the match score.
 
         Raises:
             ValueError: If best_match.internal is None.
@@ -51,5 +49,4 @@ class MatchResult:
             external=external,
             internal=best_match.internal,
             score=best_match.score,
-            breakdown=best_match.breakdown,
         )
