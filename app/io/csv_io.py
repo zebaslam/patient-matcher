@@ -13,6 +13,7 @@ from app.config import (
     ACCEPTED_CSV_PATH,
 )
 from app.models.patient import Patient
+from app.models.match_output import MatchOutput
 
 
 OUTPUT_HEADER = ["ExternalPatientId", "InternalPatientId"]
@@ -49,11 +50,11 @@ def load_data() -> Tuple[List[Patient], List[Patient]]:
     return internal, external
 
 
-def write_match(external_id: str, internal_id: str) -> bool:
+def write_match(output: MatchOutput) -> bool:
     """Write an accepted match to the accepted CSV file."""
     try:
         with open(ACCEPTED_CSV_PATH, "a", newline="", encoding=ENCODING) as f:
-            csv.writer(f).writerow([external_id, internal_id])
+            csv.writer(f).writerow([output.external_id, output.internal_id])
         return True
     except ValueError as e:
         log.error("Error writing match: %s", e)
