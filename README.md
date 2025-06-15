@@ -53,7 +53,7 @@ python main.py
 
 6. Additional files generated include:
 
-- `data/matches.txt` -> showcases all matches
+- `data/matches.csv` -> showcases all matches
 - `data/accepted.csv` -> showcases accepted matches from UI
 
 ---
@@ -94,5 +94,30 @@ A match is accepted if its score exceeds a defined threshold (defined in `config
 - There is **no unique patient ID** shared between files.
 - The matching algorithm prioritizes **precision over recall**, meaning it avoids false positives even if that leads to more unmatched rows.
 - Only the **best match** per external patient is recorded in `matches.csv`; if no match passes the threshold, that patient is excluded.
+
+---
+
+## 🏥 Data Model Overview
+
+The application uses Python `@dataclass` models to represent core entities:
+
+- **Patient**: patient_id, first_name, last_name, dob, sex, phone_number, address, city, zipcode, score
+- **MatchScore**: value, breakdown, threshold, meets_threshold, reason
+- **MatchOutput**: external_id, internal_id
+- **FieldSimilarityResult**: similarity, algorithm
+- **BestMatch**: internal (Patient), score (MatchScore)
+- **MatchResult**: external (Patient), internal (Patient), score (MatchScore)
+
+---
+
+## 🧪 Running Tests
+
+To run the test suite using Python's built-in `unittest` framework:
+
+```bash
+python -m unittest discover tests
+```
+
+This will run all unit tests in the `tests/` directory.
 
 ---
